@@ -1,0 +1,44 @@
+import random  # utilitaire pour choisir aléatoirement
+import pygame as pg  # pygame importé sous le nom pg
+from scenes.base_scene import Scene  # classe de base pour les scènes
+from ui.widgets import Button  # widget bouton réutilisable
+from repositories import MannequinRepo  # repo pour récupérer les mannequins
+
+
+THEMES = [  # liste des thèmes disponibles (code, label)
+    ("casual", "Casual"),
+    ("soiree", "Soirée"),
+    ("colorful", "Colorful"),
+    ("chic", "Chic"),
+]
+
+
+class MenuScene(Scene):  # Écran d'accueil / menu principal
+    def __init__(self, game):
+        super().__init__(game)  # conserve la référence au jeu
+        self.title_font = pg.font.SysFont(None, 56)  # police pour le titre
+        self.buttons = []  # liste des boutons du menu
+
+
+        def start_random():  # callback appelé au clic pour démarrer une partie aléatoire
+            theme = random.choice(THEMES)  # choisit un thème au hasard
+            mannequins = MannequinRepo.all()  # récupère la liste des mannequins disponibles
+            m = random.choice(mannequins)  # choisit un mannequin au hasard
+            self.game.goto_dress(m, theme)  # change de scène pour l'écran d'habillage
+
+
+        # Ajoute un bouton centré qui démarre une nouvelle partie
+        self.buttons.append(Button((412, 320, 200, 50), "Nouvelle partie", start_random))
+
+
+    def draw(self, screen):  # Dessine l'écran du menu
+        screen.fill((240,240,245))  # fond clair
+        title = self.title_font.render("Jeu de Dressing", True, (30,30,60))  # rend le titre
+        screen.blit(title, (screen.get_width()//2 - title.get_width()//2, 120))  # centre horizontalement le titre
+        for b in self.buttons:  # dessine tous les boutons
+            b.draw(screen)
+
+
+    def handle_event(self, event):  # Transmet les événements aux widgets (boutons)
+        for b in self.buttons:
+            b.handle(event)
