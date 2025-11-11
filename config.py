@@ -1,0 +1,6 @@
+WINDOW_WIDTH = 1024
+WINDOW_HEIGHT = 640
+FPS = 60
+DB_PATH = "data/game.db"
+TITLE = "Jeu de Dressing"
+BACKGROUND_COLOR = (240, 240, 245)
