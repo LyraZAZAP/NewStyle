@@ -3,7 +3,7 @@ import pygame as pg  # pygame importé sous le nom pg
 from scenes.base_scene import Scene  # classe de base pour les scènes
 from ui.widgets import Button  # widget bouton réutilisable
 from repositories import MannequinRepo  # repo pour récupérer les mannequins
-
+from models import Mannequin
 
 THEMES = [  # liste des thèmes disponibles (code, label)
     ("casual", "Casual"),
@@ -23,11 +23,12 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         def start_random():  # callback appelé au clic pour démarrer une partie aléatoire
             theme = random.choice(THEMES)  # choisit un thème au hasard
             mannequins = MannequinRepo.all()  # récupère la liste des mannequins disponibles
-            m = random.choice(mannequins)  # choisit un mannequin au hasard
-            self.game.goto_dress(m, theme)  # change de scène pour l'écran d'habillage
+            # Sécurité : si la BDD n'est pas peuplée, utiliser un mannequin par défaut
+            default_mannequin = Mannequin(0, 'Lina', 'assets/mannequins/mannequin_base.png')
+            m = random.choice(mannequins) if mannequins else default_mannequin
+            self.game.goto_dress(m, theme)
 
 
-        # Ajoute un bouton centré qui démarre une nouvelle partie
         self.buttons.append(Button((412, 320, 200, 50), "Nouvelle partie", start_random))
 
 

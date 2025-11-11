@@ -16,18 +16,17 @@ class Database:  # Classe pour gérer l'initialisation et la connexion à la DB
         self._init_db()  # Initialise la base (schéma + seed si première exécution)
 
 
-    def _init_db(self):  # Initialise la base si nécessaire
-        first_time = not Path(self.path).exists()  # True si la DB n'existe pas encore
-        with sqlite3.connect(self.path) as con:  # Ouvre une connexion temporaire
-            con.executescript(SCHEMA.read_text(encoding='utf-8'))  # Exécute le fichier schema.sql
-            if first_time:  # Si première fois, charge aussi les données d'exemple
-                con.executescript(SEED.read_text(encoding='utf-8'))  # Exécute le seed_data.sql
+    def _init_db(self):
+        # Toujours appliquer le schéma puis le seed (INSERT OR IGNORE rend l'opération idempotente)
+        with sqlite3.connect(self.path) as con:
+            con.executescript(SCHEMA.read_text(encoding='utf-8'))
+            con.executescript(SEED.read_text(encoding='utf-8'))
 
 
-    def connect(self):  # Ouvre une connexion réutilisable vers la DB
-        con = sqlite3.connect(self.path)  # Connexion SQLite vers le fichier DB
-        con.row_factory = sqlite3.Row  # Retourne les lignes comme des objets dict-like
-        return con  # Renvoie l'objet connection
+    def connect(self):
+        con = sqlite3.connect(self.path)
+        con.row_factory = sqlite3.Row
+        return con
 
 
 DB = Database()  # Instanciation globale (singleton simple) de la base
