@@ -1,31 +1,40 @@
-INSERT OR IGNORE INTO category (name, max_items) VALUES -- Insère les catégories si elles n'existent pas
-('top', 1), ('bottom', 1), ('shoes', 1), ('accessory', 4); -- catégories principales et nombre max d'éléments
-('skin', 1), ('hair', 1) -- autres catégories (peuvent être pour peau/cheveux)
+﻿-- Catégories
+INSERT OR IGNORE INTO category (name, max_items) VALUES ('top', 1);
+INSERT OR IGNORE INTO category (name, max_items) VALUES ('bottom', 1);
+INSERT OR IGNORE INTO category (name, max_items) VALUES ('shoes', 1);
+INSERT OR IGNORE INTO category (name, max_items) VALUES ('accessory', 4);
 
+-- Thèmes
+INSERT OR IGNORE INTO theme (code, label) VALUES ('casual','Casual');
+INSERT OR IGNORE INTO theme (code, label) VALUES ('soiree','Soirée');
+INSERT OR IGNORE INTO theme (code, label) VALUES ('sport','Sport');
+INSERT OR IGNORE INTO theme (code, label) VALUES ('travail','Travail');
 
-INSERT OR IGNORE INTO theme (code, label) VALUES -- Insère les thèmes de jeu si absents
-('casual','Casual'), ('soiree','Soirée'), ('colorful','Colorful'), ('chic','Travail'); -- code et libellé du thème
+-- Mannequins
+INSERT OR IGNORE INTO mannequin (id, name, base_sprite_path) VALUES (1, 'Lina', 'assets/mannequins/mannequin_base.png');
+INSERT OR IGNORE INTO mannequin (id, name, base_sprite_path) VALUES (2, 'Noa', 'assets/mannequins/mannequin_base.png');
 
+-- Vêtements (référencent les catégories par sous-requête)
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('T-shirt Blanc', (SELECT id FROM category WHERE name='top'), 'assets/clothes/tops/tshirt_white.png', 'casual', 10);
 
-INSERT OR IGNORE INTO mannequin (id, name, base_sprite_path) VALUES -- Insère des mannequins exemples
-(1, 'Lina', 'assets/mannequins/mannequin_base.png'), -- mannequin id 1
-(2, 'Noa', 'assets/mannequins/mannequin_base.png'); -- mannequin id 2
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('Chemise Noire', (SELECT id FROM category WHERE name='top'), 'assets/clothes/tops/shirt_black.png', 'soiree', 20);
 
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('Jeans Bleu', (SELECT id FROM category WHERE name='bottom'), 'assets/clothes/bottoms/jeans_blue.png', 'casual', 15);
 
--- Exemples de vêtements (utilisent des placeholders rectangulaires dessinés par le code si le sprite manque)
-INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price) -- Ajoute un vêtement si non présent
-SELECT 'T-shirt Blanc', c.id, 'assets/clothes/tops/tshirt_white.png', 'casual', 10 FROM category c WHERE c.name='top'; -- T-shirt blanc pour 'top'
-INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price) -- Autre vêtement
-SELECT 'Chemise Noire', c.id, 'assets/clothes/tops/shirt_black.png', 'soiree', 20 FROM category c WHERE c.name='top'; -- Chemise noire pour soirées
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
-SELECT 'Jeans Bleu', c.id, 'assets/clothes/bottoms/jeans_blue.png', 'casual', 15 FROM category c WHERE c.name='bottom'; -- Jeans pour 'bottom'
+VALUES ('Jupe Rouge', (SELECT id FROM category WHERE name='bottom'), 'assets/clothes/bottoms/skirt_red.png', 'soiree', 25);
+
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
-SELECT 'Jupe Rouge', c.id, 'assets/clothes/bottoms/skirt_red.png', 'soiree', 25 FROM category c WHERE c.name='bottom'; -- Jupe rouge pour soirées
+VALUES ('Baskets', (SELECT id FROM category WHERE name='shoes'), 'assets/clothes/shoes/sneakers.png', 'sport', 10);
+
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
-SELECT 'Baskets', c.id, 'assets/clothes/shoes/sneakers.png', 'sport', 10 FROM category c WHERE c.name='shoes'; -- Chaussures sport
+VALUES ('Talons', (SELECT id FROM category WHERE name='shoes'), 'assets/clothes/shoes/heels.png', 'soiree', 30);
+
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
-SELECT 'Talons', c.id, 'assets/clothes/shoes/heels.png', 'soiree', 30 FROM category c WHERE c.name='shoes'; -- Talons pour soirées
+VALUES ('Lunettes', (SELECT id FROM category WHERE name='accessory'), 'assets/clothes/accessories/glasses.png', 'travail', 10);
+
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
-SELECT 'Lunettes', c.id, 'assets/clothes/accessories/glasses.png', 'travail', 10 FROM category c WHERE c.name='accessory'; -- Accessoire lunettes
-INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
-SELECT 'Sac', c.id, 'assets/clothes/accessories/bag.png', 'soiree', 15 FROM category c WHERE c.name='accessory'; -- Accessoire sac
+VALUES ('Sac', (SELECT id FROM category WHERE name='accessory'), 'assets/clothes/accessories/bag.png', 'soiree', 15);
