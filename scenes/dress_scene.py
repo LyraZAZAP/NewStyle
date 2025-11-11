@@ -77,37 +77,51 @@ class DressScene(Scene):  # Écran d'habillage
             y += 100
 
     def handle_event(self, event):
-        # Gestion du drag & drop depuis la galerie
+        # Simplified dispatcher for input events
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            # Parcourt la galerie de droite à gauche pour prendre l'item supérieur si cliqué
-            for item in reversed([i for i in self.gallery_items if isinstance(i, Draggable)]):
-                if item.rect().collidepoint(event.pos):
-                    item.grab = True
-                    item.offset = pg.Vector2(event.pos) - item.pos  # calcule l'offset souris->image
-                    break
+            self._start_drag(event)
         elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
-            # Si on relâche la souris, traite tous les items qui étaient tenus
-            for item in [i for i in self.gallery_items if isinstance(i, Draggable) and i.grab]:
-                item.grab = False
-        # Si relâché dans la scène (porter l'item)
-                if self.stage.collidepoint(event.pos):
-                    if self.outfit.can_add(item.garment):
-                        self.outfit.add(item.garment)  # ajoute le vêtement à la tenue
-                    # position autour du mannequin
-                        item.pos = pg.Vector2(520, 120) # position de base pour l'exemple
-                        self.worn_items[item.garment.id] = item  # mémorise comme porté
-                    else:
-                    # Repositionner dans la sidebar si quota atteint
-                        item.pos = pg.Vector2(20, item.pos.y)
-                else:
-                # Retirer si lâché hors scène
-                    self.outfit.remove(item.garment)
-                    if item.garment.id in self.worn_items:
-                        del self.worn_items[item.garment.id]
+            self._stop_drag(event)
         elif event.type == pg.KEYDOWN:
             if event.key == pg.K_RETURN:
                 # Valide la tenue et passe à l'écran de résultat
                 self.game.goto_result(self.mannequin, (self.theme_code, self.theme_label), self.outfit)
+
+    def _start_drag(self, event):
+        """Begin dragging the topmost draggable under the cursor."""
+        draggables = [i for i in self.gallery_items if isinstance(i, Draggable)]
+        for item in reversed(draggables):
+            if item.rect().collidepoint(event.pos):
+                item.grab = True
+                item.offset = pg.Vector2(event.pos) - item.pos  # calcule l'offset souris->image
+                break
+
+    def _stop_drag(self, event):
+        """Handle release: place on stage, return to sidebar or remove from outfit."""
+        grabbed = [i for i in self.gallery_items if isinstance(i, Draggable) and i.grab]
+        for item in grabbed:
+            item.grab = False
+            if self.stage.collidepoint(event.pos):
+                self._drop_on_stage(item)
+            else:
+                self._drop_outside_stage(item)
+
+    def _drop_on_stage(self, item):
+        """Try to add the item to the outfit and position it, otherwise return to sidebar."""
+        if self.outfit.can_add(item.garment):
+            self.outfit.add(item.garment)  # ajoute le vêtement à la tenue
+            # position autour du mannequin (exemple)
+            item.pos = pg.Vector2(520, 120)
+            self.worn_items[item.garment.id] = item  # mémorise comme porté
+        else:
+            # Repositionner dans la sidebar si quota atteint
+            item.pos = pg.Vector2(20, item.pos.y)
+
+    def _drop_outside_stage(self, item):
+        """Remove the item from the outfit if dropped outside the stage."""
+        self.outfit.remove(item.garment)
+        if item.garment.id in self.worn_items:
+            del self.worn_items[item.garment.id]
 
 
     def update(self, dt):
