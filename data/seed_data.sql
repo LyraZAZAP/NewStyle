@@ -48,3 +48,33 @@ VALUES ('pantalon vert', (SELECT id FROM category WHERE name='bottom'), 'assets/
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('jupe classic', (SELECT id FROM category WHERE name='bottom'), 'assets/clothes/bottoms/bottom2.png', 'chic', 15);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('calm', (SELECT id FROM category WHERE name='face'), 'assets/clothes/faces/face1.png', 'casual', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('energetic', (SELECT id FROM category WHERE name='face'), 'assets/clothes/faces/face2.png', 'colorful', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('serene', (SELECT id FROM category WHERE name='face'), 'assets/clothes/faces/face3.png', 'chic', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('interested', (SELECT id FROM category WHERE name='face'), 'assets/clothes/faces/face4.png', 'soiree', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('happy', (SELECT id FROM category WHERE name='face'), 'assets/clothes/faces/face5.png', 'colorful', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('bob', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair1.png', 'chic', 25);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('blue', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair2.png', 'soiree', 25);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('blond', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair3.png', 'casual', 25);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('long', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair4.png', 'chic', 25);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('violet', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair5.png', 'colorful', 25);
