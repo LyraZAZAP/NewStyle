@@ -2,7 +2,7 @@
 INSERT OR IGNORE INTO category (name, max_items) VALUES ('top', 1);
 INSERT OR IGNORE INTO category (name, max_items) VALUES ('bottom', 1);
 INSERT OR IGNORE INTO category (name, max_items) VALUES ('shoes', 1);
-INSERT OR IGNORE INTO category (name, max_items) VALUES ('accessory', 4);
+INSERT OR IGNORE INTO category (name, max_items) VALUES ('accessory', 1);
 INSERT OR IGNORE INTO category (name, max_items) VALUES ('hair', 1);
 INSERT OR IGNORE INTO category (name, max_items) VALUES ('face', 1);
 
