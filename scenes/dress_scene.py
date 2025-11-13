@@ -175,6 +175,9 @@ class DressScene(Scene):  # Écran d'habillage
                 if self.sidebar.top <= draw_y <= self.sidebar.bottom:
                     screen.blit(surf, (x, draw_y))
             elif isinstance(it, Draggable):
+                # Ne pas afficher les vêtements déjà portés (ils sont dans worn_items et s'affichent après)
+                if it.garment.id in self.worn_items:
+                    continue
                 if it.grab:
                     screen.blit(it.image, it.pos)
                 else:
