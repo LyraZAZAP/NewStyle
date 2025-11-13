@@ -78,3 +78,33 @@ VALUES ('long', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hai
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('violet', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair5.png', 'colorful', 25);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('goth', (SELECT id FROM category WHERE name='accessoire'), 'assets/clothes/accessories/accessoire1.png', 'soiree', 5);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('music', (SELECT id FROM category WHERE name='accessoire'), 'assets/clothes/accessories/accessoire2.png', 'chic', 5);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('telephone', (SELECT id FROM category WHERE name='accessoire'), 'assets/clothes/accessories/accessoire3.png', 'casual', 5);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('pink', (SELECT id FROM category WHERE name='accessoire'), 'assets/clothes/accessories/accessoire4.png', 'colorful', 5);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('goth', (SELECT id FROM category WHERE name='accessoire'), 'assets/clothes/accessories/accessoire5.png', 'chic', 5);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('malefique boots', (SELECT id FROM category WHERE name='shoe'), 'assets/clothes/shoes/shoe1.png', 'casual', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('boots', (SELECT id FROM category WHERE name='shoe'), 'assets/clothes/shoes/shoe2.png', 'chic', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('fourrure', (SELECT id FROM category WHERE name='shoe'), 'assets/clothes/shoes/shoe3.png', 'soiree', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('shoe punk', (SELECT id FROM category WHERE name='shoe'), 'assets/clothes/shoes/shoe4.png', 'colorful', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('blue boots', (SELECT id FROM category WHERE name='shoe'), 'assets/clothes/shoes/shoe5.png', 'chic', 10);
