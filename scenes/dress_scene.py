@@ -195,46 +195,25 @@ class DressScene(Scene):  # Écran d'habillage
                     screen.blit(it.image, it.pos)
                 else:
                     draw_pos = (it.base_pos.x, it.base_pos.y - self.scroll_y)
+                    screen.blit(it.image, draw_pos)
 
         pg.draw.rect(screen, (235,240,250), self.stage)
         screen.blit(self.mannequin_img, (self.stage.left + 180, 80))
 
-    # Items portés par-dessus le mannequin
-    for it in self.worn_items.values():
-        screen.blit(it.image, it.pos)
-
-    # Barre de scroll (thumb) dans la sidebar (optionnel)
-    if self.content_height > self.sidebar.height:
-        view_ratio = self.sidebar.height / self.content_height
-        thumb_h = max(30, int(self.sidebar.height * view_ratio))
-        max_scroll = self.content_height - self.sidebar.height
-        thumb_y = int((self.scroll_y / max_scroll) * (self.sidebar.height - thumb_h))
-        rail = pg.Rect(self.sidebar.right - 10, 10, 4, self.sidebar.height - 20)
-        thumb = pg.Rect(self.sidebar.right - 14, 10 + thumb_y, 12, thumb_h)
-        pg.draw.rect(screen, (220,220,230), rail, border_radius=2)
-        pg.draw.rect(screen, (160,160,180), thumb, border_radius=4)
-    
-    hint = self.font.render("Molette = défiler | Entrée = valider", True, (30,30,60))
-    screen.blit(hint, (self.stage.left + 20, self.game.h - 30))
-
-
-    for item in self.gallery_items:
-        if item == "label":
-            continue
-        if isinstance(item, tuple): # ("label", surf, pos)
-            screen.blit(item[1], item[2])
-        else:
-            screen.blit(item.image, item.pos)
-
-
-        # Stage & mannequin
-        pg.draw.rect(screen, (235,240,250), self.stage)
-        screen.blit(self.mannequin_img, (self.stage.left + 180, 80))
-
-        # Items portés (après mannequin pour être par-dessus)
+        # Items portés par-dessus le mannequin
         for it in self.worn_items.values():
             screen.blit(it.image, it.pos)
 
-        # Hint
-        hint = self.font.render("Entrée = Valider la tenue", True, (30,30,60))
+        # Barre de scroll (thumb) dans la sidebar (optionnel)
+        if self.content_height > self.sidebar.height:
+            view_ratio = self.sidebar.height / self.content_height
+            thumb_h = max(30, int(self.sidebar.height * view_ratio))
+            max_scroll = self.content_height - self.sidebar.height
+            thumb_y = int((self.scroll_y / max_scroll) * (self.sidebar.height - thumb_h))
+            rail = pg.Rect(self.sidebar.right - 10, 10, 4, self.sidebar.height - 20)
+            thumb = pg.Rect(self.sidebar.right - 14, 10 + thumb_y, 12, thumb_h)
+            pg.draw.rect(screen, (220,220,230), rail, border_radius=2)
+            pg.draw.rect(screen, (160,160,180), thumb, border_radius=4)
+        
+        hint = self.font.render("Molette = défiler | Entrée = valider", True, (30,30,60))
         screen.blit(hint, (self.stage.left + 20, self.game.h - 30))
