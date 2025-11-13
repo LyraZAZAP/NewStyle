@@ -66,6 +66,7 @@ class DressScene(Scene):  # Écran d'habillage
     def _build_gallery(self):
         """Remplit self.gallery_items avec des labels de catégories et des Draggable pour chaque vêtement."""
         y = 20
+        max_x = 0
         for cat in self.categories:
             garments = GarmentRepo.by_category(cat.id)  # récupère les vêtements de la catégorie
             label = self.big.render(cat.name.upper(), True, (40,40,70))  # rend le titre de la catégorie
@@ -98,49 +99,32 @@ class DressScene(Scene):  # Écran d'habillage
                 self._clamp_scroll()
             return # ignore les autres events de souris dans la sidebar
         
-        # Simplified dispatcher for input events
+        # Delegate drag start/stop to helper methods (handles scroll-affected hit testing)
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            mouse = pg.Vector2(event.pos)
-            for item in reversed([i for i in self.gallery_items if isinstance(i, Draggable)]):
-                displayed_pos = item.pos if item.grab else (pg.Vector2(item.pos.x, item.pos.y - self.scroll_y))
-                r = item.image.get_rect(topleft=displayed_pos)
-                if r.collidepoint(mouse):
-                    item.grab = True
-                    item.offset = mouse - display_pos
-                    display_pos = item.pos if item.grab else (pg.Vector2(item.base_pos.x, item.base_pos.y - self.scroll_y))
-                    r = item.image.get_rect(topleft=display_pos)
-                    if r.collidepoint(mouse):
-                        item.grab = True
-                        item.offset = mouse - display_pos
-                        item.offset = mouse - display_pos
-                        break
+            self._start_drag(event)
 
         elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
-            for item in [i for i in self.gallery_items if isinstance(i, Draggable) and i.grab]:
-                item.grab = False
-                if self.stage.collidepoint(event.pos):
-                    if self.outfit.can_add(item.garment):
-                        self.outfit.add(item.garment)
-                        item.pos = pg.Vector2(520, 120)  # position simple sur la scène
-                        self.worn_items[item.garment.id] = item
-                    else:
-                        # replacer dans la galerie à sa position de base (pos de base déjà stockée dans item.pos? non)
-                        # On ne change rien: la position "base" est le tuple stocké lors de la création (item.pos initiale),
-                        # mais comme on l’a écrasée pendant le drag, on la remet à sa base logique:
-                        pass
-                else:
-                    item.pos = pg.Vector2(item.base_pos.x, item.base_pos.y - self.scroll_y)
-                    pass
+            self._stop_drag(event)
 
 
 
     def _start_drag(self, event):
         """Begin dragging the topmost draggable under the cursor."""
+        # Build list of draggables (topmost last) and test their displayed rects (account for scroll)
         draggables = [i for i in self.gallery_items if isinstance(i, Draggable)]
         for item in reversed(draggables):
-            if item.rect().collidepoint(event.pos):
+            # compute where the item is drawn when not grabbed (gallery position adjusted by scroll)
+            if item.grab:
+                draw_pos = pg.Vector2(item.pos)
+            else:
+                draw_pos = pg.Vector2(item.base_pos.x, item.base_pos.y - self.scroll_y)
+
+            rect = item.image.get_rect(topleft=(int(draw_pos.x), int(draw_pos.y)))
+            if rect.collidepoint(event.pos):
                 item.grab = True
-                item.offset = pg.Vector2(event.pos) - item.pos  # calcule l'offset souris->image
+                # set its pos to the draw position (screen coords) and compute offset mouse->image
+                item.pos = pg.Vector2(draw_pos)
+                item.offset = pg.Vector2(event.pos) - item.pos
                 break
 
     def _stop_drag(self, event):
