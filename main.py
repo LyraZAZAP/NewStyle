@@ -1,9 +1,13 @@
 import os  # pour supprimer le fichier game.db
+import gc  # pour forcer la libération mémoire
+import time  # pour ajouter un délai
+import sqlite3  # pour fermer les connexions
 import pygame as pg  # wrapper pygame
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TITLE, BACKGROUND_COLOR  # constantes de configuration
 from scenes.menu_scene import MenuScene  # écran menu
 from scenes.dress_scene import DressScene  # écran d'habillage
 from scenes.result_scene import ResultScene  # écran de résultat
+from db import DB  # pour fermer la connexion à la base
 
 
 class Game:  # Classe principale du jeu : gère la boucle, la fenêtre et la scène active
@@ -30,13 +34,21 @@ class Game:  # Classe principale du jeu : gère la boucle, la fenêtre et la sc�
 
 
     def cleanup(self):
-        """Supprime le fichier game.db à la fermeture du jeu."""
+        """Supprime le fichier game.db du dossier data à la fermeture du jeu."""
         try:
-            if os.path.exists("game.db"):
-                os.remove("game.db")
-                print("game.db supprimé.")
+            # Fermer la connexion à la base de données
+            DB.close()
+            
+            # Forcer la libération mémoire pour relâcher les verrous fichier
+            gc.collect()
+            time.sleep(0.5)  # Attendre que les verrous se relâchent
+            
+            db_path = os.path.join("data", "game.db")
+            if os.path.exists(db_path):
+                os.remove(db_path)
+                print("data/game.db supprimé.")
         except Exception as e:
-            print(f"Erreur lors de la suppression de game.db : {e}")
+            print(f"Erreur lors de la suppression de data/game.db : {e}")
 
 
     def run(self):  # Boucle principale du jeu

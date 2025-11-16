@@ -1,4 +1,5 @@
 import sqlite3  # bibliothèque SQLite intégrée
+import time  # pour ajouter un délai avant suppression
 from pathlib import Path  # utilitaire pour manipuler les chemins
 
 
@@ -12,6 +13,7 @@ SEED = Path('data/seed_data.sql')  # chemin vers le fichier de données initiale
 class Database:  # Classe pour gérer l'initialisation et la connexion à la DB
     def __init__(self, path: str = DB_PATH):  # Constructeur : path optionnel vers la DB en cas de besoin/problème
         self.path = path  # Stocke le chemin de la base
+        self._connection = None  # Stocke la connexion courante
         Path('data').mkdir(exist_ok=True)  # Crée le dossier data si nécessaire ( mkdir = commande en linux pour generer le dossier )
         self._init_db()  # Initialise la base (schéma + seed si première exécution)
 
@@ -26,7 +28,23 @@ class Database:  # Classe pour gérer l'initialisation et la connexion à la DB
     def connect(self):
         con = sqlite3.connect(self.path)
         con.row_factory = sqlite3.Row
+        self._connection = con  # Mémorise la connexion
         return con
+
+    def close(self):
+        """Ferme la connexion à la base de données."""
+        if self._connection:
+            try:
+                self._connection.close()
+                self._connection = None
+            except Exception as e:
+                print(f"Erreur lors de la fermeture de la connexion DB : {e}")
+        
+        # Fermer le module SQLite complètement
+        try:
+            sqlite3.shutdown()
+        except Exception:
+            pass
 
 
 DB = Database()  # Instanciation globale (singleton simple) de la base
