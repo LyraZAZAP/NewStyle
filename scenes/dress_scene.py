@@ -11,7 +11,9 @@ SCROLL_SPEED = 40  # Vitesse de défilement de la galerie
 class Draggable:  # Petit objet qui représente un vêtement draggable (glissable)
     def __init__(self, garment, image, pos):
         self.garment = garment  # dataclass Garment associée
-        self.image = image  # surface pygame contenant le sprite/aperçu
+        self.thumb = image  # vignette pour la galerie
+        self.image = image  # surface pygame contenant le sprite/aperçu (alias)
+        self.stage_image = None  # image utilisée quand l'article est porté (taille du mannequin)
         self.base_pos = pg.Vector2(pos)  # position de base dans la galerie
         self.pos = pg.Vector2(pos)  # position flottante (x,y)
         self.grab = False  # True si l'utilisateur tient l'objet
@@ -154,11 +156,24 @@ class DressScene(Scene):  # Écran d'habillage
                 self._drop_outside_stage(item)
 
     def _drop_on_stage(self, item):
-        """Try to add the item to the outfit and position it, otherwise return to sidebar."""
+        """Try to add the item to the outfit and position it, otherwise return to sidebar.
+
+        This variant scales the garment image to the exact size of the mannequin image
+        so the clothing appears at the mannequin's original size.
+        """
         if self.outfit.can_add(item.garment):
             self.outfit.add(item.garment)  # ajoute le vêtement à la tenue
-            # position autour du mannequin (exemple)
-            item.pos = pg.Vector2(520, 120)
+            # Récupère la taille du sprite du mannequin
+            m_img = self.mannequin_img
+            m_w, m_h = m_img.get_width(), m_img.get_height()
+            # Position réelle du mannequin sur l'écran (centré dans la zone stage)
+            mannequin_x = self.stage.left + (self.stage.width - m_w) // 2 + 10 
+            mannequin_y = 80
+
+            # Redimensionne l'image du vêtement à la taille du mannequin
+            item.stage_image = self._safe_load(item.garment.sprite_path, size=(m_w, m_h))
+            # Place l'image au-dessus du mannequin (coordonnées écran)
+            item.pos = pg.Vector2(mannequin_x, mannequin_y)
             self.worn_items[item.garment.id] = item  # mémorise comme porté
         else:
             # Repositionner dans la sidebar si quota atteint
@@ -178,36 +193,40 @@ class DressScene(Scene):  # Écran d'habillage
             item.pos = pg.Vector2(mouse) - item.offset
 
 
-    def draw(self, screen):
-        # Sidebar
+    def _draw_sidebar(self, screen):
+        """Draw the sidebar background and title."""
         pg.draw.rect(screen, (250,250,255), self.sidebar)
-        title = self.big.render(f"Thème: {self.theme_label}", True, (20,20,50)) #a changer
-        screen.blit(title, (20, self.game.h - 40)) #a changer
+        title = self.big.render(f"Thème: {self.theme_label}", True, (20,20,50))
+        screen.blit(title, (20, self.game.h - 40))
 
+    def _draw_gallery_items(self, screen):
+        """Draw gallery labels and draggable items in the sidebar."""
         for it in self.gallery_items:
             if isinstance(it, tuple) and it[0] == "label":
                 surf, (x, y) = it[1], it[2]
                 draw_y = y - self.scroll_y
                 if self.sidebar.top <= draw_y <= self.sidebar.bottom:
                     screen.blit(surf, (x, draw_y))
-            elif isinstance(it, Draggable):
-                # Ne pas afficher les vêtements déjà portés (ils sont dans worn_items et s'affichent après)
-                if it.garment.id in self.worn_items:
-                    continue
+            elif isinstance(it, Draggable) and it.garment.id not in self.worn_items:
                 if it.grab:
                     screen.blit(it.image, it.pos)
                 else:
                     draw_pos = (it.base_pos.x, it.base_pos.y - self.scroll_y)
                     screen.blit(it.image, draw_pos)
 
+    def _draw_stage(self, screen):
+        """Draw the stage background and mannequin."""
         pg.draw.rect(screen, (235,240,250), self.stage)
         screen.blit(self.mannequin_img, (self.stage.left + 180, 80))
 
-        # Items portés par-dessus le mannequin
+    def _draw_worn_items(self, screen):
+        """Draw items currently worn by the mannequin."""
         for it in self.worn_items.values():
-            screen.blit(it.image, it.pos)
+            img = it.stage_image if getattr(it, 'stage_image', None) is not None else it.image
+            screen.blit(img, it.pos)
 
-        # Barre de scroll (thumb) dans la sidebar (optionnel)
+    def _draw_scrollbar(self, screen):
+        """Draw the scrollbar thumb in the sidebar."""
         if self.content_height > self.sidebar.height:
             view_ratio = self.sidebar.height / self.content_height
             thumb_h = max(30, int(self.sidebar.height * view_ratio))
@@ -217,10 +236,19 @@ class DressScene(Scene):  # Écran d'habillage
             thumb = pg.Rect(self.sidebar.right - 14, 10 + thumb_y, 12, thumb_h)
             pg.draw.rect(screen, (220,220,230), rail, border_radius=2)
             pg.draw.rect(screen, (160,160,180), thumb, border_radius=4)
-        
+
+    def _draw_hint(self, screen):
+        """Draw the hint text at the bottom of the stage."""
         hint = self.font.render("Molette = défiler | Entrée = valider", True, (30,30,60))
         screen.blit(hint, (self.stage.left + 20, self.game.h - 30))
 
+    def draw(self, screen):
+        self._draw_sidebar(screen)
+        self._draw_gallery_items(screen)
+        self._draw_stage(screen)
+        self._draw_worn_items(screen)
+        self._draw_scrollbar(screen)
+        self._draw_hint(screen)
     # Nouvelle méthode : supprime récursivement tous les dossiers __pycache__ sous le dossier du module
     def _clean_pycache(self):
         """
