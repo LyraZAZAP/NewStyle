@@ -1,88 +1,134 @@
-import os  # opérations système (ex: vérifier l'existence d'un fichier)
-import shutil  # pour supprimer récursivement les __pycache__
-import pygame as pg  # wrapper pygame importé sous le nom pg
-from typing import Dict  # annotation de type pour dictionnaires
-from scenes.base_scene import Scene  # classe de base pour les scènes
-from repositories import CategoryRepo, GarmentRepo  # accès aux données catégories/vêtements
-from services import Outfit  # logique de tenue (Outfit)
-from config import SIDEBAR_BG_PATH, STAGE_BG_PATH
+# === IMPORTS ===
+import os  # opérations système (vérification existence fichiers, parcours dossiers)
+import shutil  # utilitaires fichiers (suppression récursive de dossiers)
+import pygame as pg  # bibliothèque de jeu pygame (alias pg pour concision)
+from typing import Dict  # annotations de type pour les dictionnaires
+from scenes.base_scene import Scene  # classe abstraite de base pour toutes les scènes
+from repositories import CategoryRepo, GarmentRepo  # accès BDD pour catégories et vêtements
+from services import Outfit  # logique métier de gestion de tenue
+from config import SIDEBAR_BG_PATH, STAGE_BG_PATH  # chemins des fonds d'écran
 
-SCROLL_SPEED = 40  # Vitesse de défilement de la galerie
+# === CONSTANTES ===
+SCROLL_SPEED = 40  # Pixels défilés par cran de molette (ajustable selon préférence)
 
+# === FONCTIONS UTILITAIRES ===
 def _load_background(path, size, fallback_color):
-    """Charge et redimensionne une image de fond, ou retourne une surface unie."""
+    """
+    Charge et redimensionne une image de fond, ou retourne une surface unie si le fichier n'existe pas.
+    
+    Args:
+        path (str): Chemin vers l'image de fond
+        size (tuple): Taille cible (largeur, hauteur)
+        fallback_color (tuple): Couleur RGB de repli si l'image n'existe pas
+    
+    Returns:
+        pygame.Surface: Image redimensionnée ou surface unie
+    """
     if os.path.exists(path):
         img = pg.image.load(path)
+        # Convertir pour optimiser le rendu (convert_alpha si transparence, sinon convert)
         img = img.convert() if img.get_alpha() is None else img.convert_alpha()
-        return pg.transform.smoothscale(img, size)
+        return pg.transform.smoothscale(img, size)  # redimensionnement de qualité
+    # Si l'image n'existe pas, créer une surface unie
     surf = pg.Surface(size)
     surf.fill(fallback_color)
     return surf
 
-class Draggable:  # Petit objet qui représente un vêtement draggable (glissable)
+# === CLASSE DRAGGABLE ===
+class Draggable:
+    """
+    Représente un vêtement glissable (drag & drop) dans la galerie.
+    Stocke l'état du vêtement : position, images (vignette/stage), état de drag.
+    """
     def __init__(self, garment, image, pos):
-        self.garment = garment  # dataclass Garment associée
-        self.thumb = image  # vignette pour la galerie
-        self.image = image  # surface pygame contenant le sprite/aperçu (alias)
-        self.stage_image = None  # image utilisée quand l'article est porté (taille du mannequin)
-        self.base_pos = pg.Vector2(pos)  # position de base dans la galerie
-        self.pos = pg.Vector2(pos)  # position flottante (x,y)
-        self.grab = False  # True si l'utilisateur tient l'objet
-        self.offset = pg.Vector2(0,0)  # distance entre la souris et le coin supérieur gauche
+        """
+        Initialise un objet draggable associé à un vêtement.
+        
+        Args:
+            garment (Garment): Dataclass contenant les infos du vêtement
+            image (pygame.Surface): Vignette pour affichage dans la galerie
+            pos (tuple): Position initiale (x, y) dans la galerie
+        """
+        self.garment = garment  # référence vers l'objet Garment (id, nom, catégorie, etc.)
+        self.thumb = image  # vignette originale (petite taille pour la galerie)
+        self.image = image  # surface actuellement affichée (vignette ou version agrandie)
+        self.stage_image = None  # image redimensionnée quand portée sur le mannequin (360x520)
+        self.base_pos = pg.Vector2(pos)  # position fixe dans la galerie (pour retour après drag)
+        self.pos = pg.Vector2(pos)  # position actuelle (change pendant le drag)
+        self.grab = False  # True si l'utilisateur tient actuellement l'objet
+        self.offset = pg.Vector2(0, 0)  # décalage souris-objet lors du grab (pour drag fluide)
 
+    def rect(self):
+        """
+        Retourne le rectangle de collision de l'objet à sa position actuelle.
+        
+        Returns:
+            pygame.Rect: Rectangle (x, y, width, height) pour détection de collision
+        """
+        return self.image.get_rect(topleft=self.pos)
 
-    def rect(self):  # Retourne le rect (position/tailles) de l'image à la position courante
-        r = self.image.get_rect(topleft=self.pos)
-        return r
-
-
-class DressScene(Scene):  # Écran d'habillage
+# === CLASSE PRINCIPALE ===
+class DressScene(Scene):
+    """
+    Écran principal d'habillage : galerie de vêtements (gauche) + mannequin (droite).
+    Gère le drag & drop, la scrollbar, la superposition des vêtements et la validation.
+    """
     def __init__(self, game, mannequin, theme):
-        super().__init__(game)  # conserve la référence vers l'objet jeu principal
-        self.mannequin = mannequin  # mannequin sélectionné
-        self.theme_code, self.theme_label = theme  # code et libellé du thème courant
-        self.font = pg.font.SysFont(None, 24)  # petite police
-        self.big = pg.font.SysFont(None, 36)  # police plus grande
+        """
+        Initialise l'écran d'habillage avec la galerie, le mannequin et les fonds d'écran.
+        
+        Args:
+            game (Game): Référence à l'objet jeu principal
+            mannequin (Mannequin): Mannequin sélectionné pour cette partie
+            theme (tuple): (code_theme, libellé_theme) - ex: ("casual", "Casual")
+        """
+        super().__init__(game)  # conserve la référence au jeu
+        self.mannequin = mannequin  # mannequin utilisé
+        self.theme_code, self.theme_label = theme  # décompose le tuple thème
+        self.font = pg.font.SysFont(None, 24)  # petite police pour hints
+        self.big = pg.font.SysFont(None, 36)  # grande police pour titres
 
+        # --- Chargement des données (catégories et vêtements depuis BDD) ---
+        self.categories = CategoryRepo.all()  # liste de toutes les catégories (Top, Bottom, etc.)
+        self.outfit = Outfit(self.categories)  # objet métier gérant la tenue (quotas, score)
+        self.gallery_items = []  # liste mixte : labels de catégories + objets Draggable
+        self.scroll_y = 0  # décalage vertical du scroll de la galerie (0 = haut)
+        self.content_height = 0  # hauteur totale du contenu de la galerie (calculé dans _build_gallery)
+        self.worn_items: Dict[int, Draggable] = {}  # vêtements portés, indexés par garment.id
 
-        # Charge catégories & vêtements
-        self.categories = CategoryRepo.all()  # récupère toutes les catégories
-        self.outfit = Outfit(self.categories)  # objet Outfit qui gère la tenue
-        self.gallery_items = [] # liste d'objets pour la galerie (Draggable ou labels)
-        self.scroll_y = 0  # décalage vertical de la galerie
-        self.content_height = 0  # hauteur totale du contenu de la galerie
-        self.worn_items: Dict[int, Draggable] = {} # vêtements portés, clé = garment.id
+        # --- État de la scrollbar interactive ---
+        self.scrollbar_dragging = False  # True si l'utilisateur drag la scrollbar
+        self.scrollbar_drag_offset = 0  # décalage souris-thumb lors du drag
 
-        # État du scrollbar drag
-        self.scrollbar_dragging = False
-        self.scrollbar_drag_offset = 0
+        # --- Zones de l'écran (rectangles pygame) ---
+        self.sidebar = pg.Rect(0, 0, 320, self.game.h)  # zone gauche (galerie de vêtements)
+        self.stage = pg.Rect(320, 0, self.game.w - 320, self.game.h)  # zone droite (mannequin)
 
-        # Surfaces (zones de l'écran)
-        self.sidebar = pg.Rect(0, 0, 320, self.game.h)  # zone de gauche (galerie)
-        self.stage = pg.Rect(320, 0, self.game.w-320, self.game.h)  # zone principale (mannequin)
-
-        # Charger les fonds d'écran
+        # --- Chargement des fonds d'écran ---
+        # Charge les images ou utilise des couleurs unies par défaut
         self.sidebar_bg = _load_background(SIDEBAR_BG_PATH, (self.sidebar.width, self.sidebar.height), (250, 250, 255))
         self.stage_bg = _load_background(STAGE_BG_PATH, (self.stage.width, self.stage.height), (235, 240, 250))
 
-        # Nettoie les __pycache__ éventuels pour éviter les modules dupliqués
+        # --- Nettoyage des caches Python ---
+        # Supprime les __pycache__ pour éviter les bugs de modules dupliqués
         try:
             self._clean_pycache()
         except Exception:
-            # ne pas empêcher le lancement en cas d'erreur sur la suppression
-            pass
+            pass  # ne pas bloquer le lancement si erreur de suppression
 
-        # Mannequin / background (placeholder si fichier manquant)
-        self.mannequin_img = self._safe_load(self.mannequin.base_sprite_path, size=(360,520), fill=(230,220,220))
+        # --- Chargement du mannequin de base ---
+        # Taille standard 360x520px, placeholder gris si fichier manquant
+        self.mannequin_img = self._safe_load(self.mannequin.base_sprite_path, size=(360, 520), fill=(230, 220, 220))
 
-        # Paramètres de mise en page de la galerie
-        self.gallery_cols = 1           # mettre à 1 pour une seule image par ligne
-        self.thumb_size = (280, 280)    # taille agrandie des vignettes (au lieu de 140x140)
-        self.gallery_padding = 20       # marge intérieure (gauche/haut)
-        self.gallery_gap = 0            # espacement entre vignettes (0 = pas d'écart)
+        # --- Paramètres de mise en page de la galerie (modifiables) ---
+        self.gallery_cols = 1  # nombre de colonnes (1 = une vignette par ligne)
+        self.thumb_size = (280, 280)  # taille des vignettes en pixels (largeur, hauteur)
+        self.gallery_padding = 20  # marge intérieure (pixels depuis le bord gauche/haut)
+        self.gallery_gap = 0  # espace entre vignettes (0 = collées)
 
-        self._build_gallery()  # construit la galerie d'images à partir des catégories
-        self._clamp_scroll()  # ajuste le décalage de la galerie
+        # --- Construction initiale de la galerie et ajustement du scroll ---
+        self._build_gallery()  # crée les objets Draggable et labels à partir de la BDD
+        self._clamp_scroll()  # limite le scroll dans les bornes valides
 
 
     def _safe_load(self, path, size=(120,120), fill=(200,200,210)):
