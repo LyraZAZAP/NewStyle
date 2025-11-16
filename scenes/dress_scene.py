@@ -372,12 +372,24 @@ class DressScene(Scene):  # Écran d'habillage
     def _draw_hint(self, screen):
         """Draw the hint text at the bottom of the stage."""
         hint = self.font.render("Molette = défiler | Entrée = valider", True, (30,30,60))
-        screen.blit(hint, (self.stage.left + 20, self.game.h - 30))
+        hint_rect = hint.get_rect(topleft=(self.stage.left + 20, self.game.h - 30))
+        # Encadré blanc semi-transparent
+        bg_rect = hint_rect.inflate(20, 10)
+        bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)
+        bg_surf.fill((255, 255, 255, 200))
+        screen.blit(bg_surf, bg_rect.topleft)
+        screen.blit(hint, hint_rect)
         
         # Afficher le thème en haut à droite de la scène
         title = self.big.render(f"Thème: {self.theme_label}", True, (20,20,50))
         title_x = self.game.w - title.get_width() - 20
-        screen.blit(title, (title_x, 20))
+        title_rect = title.get_rect(topleft=(title_x, 20))
+        # Encadré blanc semi-transparent
+        bg_rect = title_rect.inflate(20, 10)
+        bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)
+        bg_surf.fill((255, 255, 255, 200))
+        screen.blit(bg_surf, bg_rect.topleft)
+        screen.blit(title, title_rect)
 
     def draw(self, screen):
         self._draw_sidebar(screen)

@@ -51,7 +51,14 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
     def draw(self, screen):  # Dessine l'écran du menu
         screen.blit(self.bg, (0, 0))  # Dessiner le fond en premier
         title = self.title_font.render("Jeu de Dressing", True, (30, 30, 60))  # rend le titre
-        screen.blit(title, (screen.get_width() // 2 - title.get_width() // 2, 120))  # centre horizontalement le titre
+        title_rect = title.get_rect(center=(screen.get_width() // 2, 120))
+        # Encadré blanc semi-transparent derrière le titre
+        bg_rect = title_rect.inflate(40, 20)
+        bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)
+        bg_surf.fill((255, 255, 255, 200))
+        screen.blit(bg_surf, bg_rect.topleft)
+        screen.blit(title, title_rect)
+
         for b in self.buttons:  # dessine tous les boutons
             b.draw(screen)
 
