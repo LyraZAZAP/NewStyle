@@ -19,7 +19,6 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         self.title_font = pg.font.SysFont(None, 56)  # police pour le titre
         self.buttons = []  # liste des boutons du menu
 
-
         def start_random():  # callback appelé au clic pour démarrer une partie aléatoire
             theme = random.choice(THEMES)  # choisit un thème au hasard
             mannequins = MannequinRepo.all()  # récupère la liste des mannequins disponibles
@@ -28,18 +27,34 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
             m = random.choice(mannequins) if mannequins else default_mannequin
             self.game.goto_dress(m, theme)
 
-
         self.buttons.append(Button((412, 320, 200, 50), "Nouvelle partie", start_random))
 
+        # Bouton toggle fullscreen (coin supérieur droit)
+        self.fullscreen_btn = pg.Rect(self.game.w - 120, 10, 110, 40)
+        self.font_small = pg.font.SysFont(None, 24)
 
     def draw(self, screen):  # Dessine l'écran du menu
-        screen.fill((240,240,245))  # fond clair
-        title = self.title_font.render("Jeu de Dressing", True, (30,30,60))  # rend le titre
-        screen.blit(title, (screen.get_width()//2 - title.get_width()//2, 120))  # centre horizontalement le titre
+        screen.fill((240, 240, 245))  # fond clair
+        title = self.title_font.render("Jeu de Dressing", True, (30, 30, 60))  # rend le titre
+        screen.blit(title, (screen.get_width() // 2 - title.get_width() // 2, 120))  # centre horizontalement le titre
         for b in self.buttons:  # dessine tous les boutons
             b.draw(screen)
 
+        # Dessiner le bouton fullscreen
+        color = (100, 150, 255) if self.fullscreen_btn.collidepoint(pg.mouse.get_pos()) else (70, 120, 200)
+        pg.draw.rect(screen, color, self.fullscreen_btn, border_radius=5)
+        pg.draw.rect(screen, (255, 255, 255), self.fullscreen_btn, 2, border_radius=5)
+
+        label = "Plein écran" if not self.game.is_fullscreen else "Fenêtré"
+        text = self.font_small.render(label, True, (255, 255, 255))
+        text_rect = text.get_rect(center=self.fullscreen_btn.center)
+        screen.blit(text, text_rect)
 
     def handle_event(self, event):  # Transmet les événements aux widgets (boutons)
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            # Clic sur bouton fullscreen
+            if self.fullscreen_btn.collidepoint(event.pos):
+                self.game.toggle_fullscreen()
+                return
         for b in self.buttons:
             b.handle(event)

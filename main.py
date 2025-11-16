@@ -14,11 +14,13 @@ class Game:  # Classe principale du jeu : gère la boucle, la fenêtre et la sc�
     def __init__(self):
         pg.init()  # initialise pygame
         self.w, self.h = WINDOW_WIDTH, WINDOW_HEIGHT  # taille de la fenêtre
-        self.screen = pg.display.set_mode((self.w, self.h))  # crée la surface principale
+        # utiliser SCALED pour faciliter le plein écran sans changer la logique interne
+        self.screen = pg.display.set_mode((self.w, self.h), pg.SCALED)
         pg.display.set_caption(TITLE)  # titre de la fenêtre
         self.clock = pg.time.Clock()  # horloge pour contrôler la cadence
         self.scene = MenuScene(self)  # scène initiale (menu)
         self.running = True  # drapeau pour la boucle principale
+        self.is_fullscreen = False  # état courant du plein écran
 
 
     def goto_menu(self):  # change la scène active vers le menu
@@ -51,12 +53,22 @@ class Game:  # Classe principale du jeu : gère la boucle, la fenêtre et la sc�
             print(f"Erreur lors de la suppression de data/game.db : {e}")
 
 
+    def toggle_fullscreen(self):
+        """Bascule fenêtre <-> plein écran sans changer la résolution logique."""
+        self.is_fullscreen = not self.is_fullscreen
+        flags = pg.SCALED | (pg.FULLSCREEN if self.is_fullscreen else 0)
+        self.screen = pg.display.set_mode((self.w, self.h), flags)
+
+
     def run(self):  # Boucle principale du jeu
         while self.running:
             dt = self.clock.tick(FPS) / 1000.0  # temps écoulé en secondes depuis la frame précédente
             for event in pg.event.get():  # récupère les événements pygame
                 if event.type == pg.QUIT:  # fenêtre fermée -> arrêter
                     self.running = False
+                # toggle plein écran: F11 ou Alt+Entrée
+                elif event.type == pg.KEYDOWN and (event.key == pg.K_F11 or (event.key == pg.K_RETURN and (event.mod & pg.KMOD_ALT))):
+                    self.toggle_fullscreen()
                 else:
                     self.scene.handle_event(event)  # transmettre l'événement à la scène
             self.scene.update(dt)  # mettre à jour la scène

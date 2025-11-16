@@ -42,6 +42,9 @@ class DressScene(Scene):  # Écran d'habillage
         self.content_height = 0  # hauteur totale du contenu de la galerie
         self.worn_items: Dict[int, Draggable] = {} # vêtements portés, clé = garment.id
 
+        # État du scrollbar drag
+        self.scrollbar_dragging = False
+        self.scrollbar_drag_offset = 0
 
         # Surfaces (zones de l'écran)
         self.sidebar = pg.Rect(0, 0, 320, self.game.h)  # zone de gauche (galerie)
@@ -57,6 +60,13 @@ class DressScene(Scene):  # Écran d'habillage
 
         # Mannequin / background (placeholder si fichier manquant)
         self.mannequin_img = self._safe_load(self.mannequin.base_sprite_path, size=(360,520), fill=(230,220,220))
+
+        # Paramètres de mise en page de la galerie
+        self.gallery_cols = 1           # mettre à 1 pour une seule image par ligne
+        self.thumb_size = (280, 280)    # taille agrandie des vignettes (au lieu de 140x140)
+        self.gallery_padding = 20       # marge intérieure (gauche/haut)
+        self.gallery_gap = 0            # espacement entre vignettes (0 = pas d'écart)
+
         self._build_gallery()  # construit la galerie d'images à partir des catégories
         self._clamp_scroll()  # ajuste le décalage de la galerie
 
@@ -74,35 +84,44 @@ class DressScene(Scene):  # Écran d'habillage
 
 
     def _build_gallery(self):
-        """Remplit self.gallery_items avec des labels de catégories et des Draggable pour chaque vêtement."""
-        # Protection : vider la galerie avant de la reconstruire (évite les doublons si appelé plusieurs fois)
+        """Construit la galerie en respectant la taille des vignettes et le nombre de colonnes."""
         self.gallery_items.clear()
+        pad = self.gallery_padding
+        gap = self.gallery_gap
+        tw, th = self.thumb_size
+        cols = max(1, int(self.gallery_cols))
 
-        y = 20
-        max_x = 0
-        seen_ids = set()  # évite d'ajouter deux fois un même vêtement
+        y = pad
         for cat in self.categories:
-            garments = GarmentRepo.by_category(cat.id)  # récupère les vêtements de la catégorie
-            label = self.big.render(cat.name.upper(), True, (40,40,70))  # rend le titre de la catégorie
-            self.gallery_items.append(("label", label, (20, y)))  # stocke un tuple pour le label
-            y += 36
-            x = 20
-            for g in garments:
-                if getattr(g, "id", None) in seen_ids:
-                    continue
-                seen_ids.add(getattr(g, "id", None))
+            label = self.big.render(cat.name.upper(), True, (40,40,70))
+            self.gallery_items.append(("label", label, (pad, y)))
+            y += 36  # espace après le titre
 
-                img = self._safe_load(g.sprite_path, size=(80,80))  # charge ou placeholder
-                d = Draggable(g, img, (x, y))  # crée un objet Draggable IMPORTANT
-                self.gallery_items.append(d)  # ajoute à la galerie
-                x += 90
-                max_x = max(max_x, x)
-                if x > 220:  # passe à la ligne si dépassement de la largeur
-                    x = 20
-                    y += 90
-            y += 100
-        self.content_height = y  # hauteur totale du contenu de la galerie
-    
+            x = pad
+            col = 0
+            garments = GarmentRepo.by_category(cat.id)
+            for g in garments:
+                # éviter doublons
+                # (les ids sont uniques par catégorie; si besoin, ajouter un set global)
+                img = self._safe_load(g.sprite_path, size=(tw, th))
+                d = Draggable(g, img, (x, y))
+                self.gallery_items.append(d)
+
+                col += 1
+                if col >= cols:
+                    col = 0
+                    x = pad
+                    y += th + gap
+                else:
+                    x += tw + gap
+
+            # séparation entre catégories
+            if col != 0:
+                y += th + gap  # compléter la dernière ligne partielle
+            y += gap * 2
+
+        self.content_height = y
+
     def _clamp_scroll(self):
         max_scroll = max(0, self.content_height - self.sidebar.height)
         if self.scroll_y < 0:
@@ -115,13 +134,24 @@ class DressScene(Scene):  # Écran d'habillage
             if self.sidebar.collidepoint(pg.mouse.get_pos()):
                 self.scroll_y -= event.y * SCROLL_SPEED
                 self._clamp_scroll()
-            return # ignore les autres events de souris dans la sidebar
+            return
         
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            # Vérifier si clic sur scrollbar
+            if self._try_start_scrollbar_drag(event.pos):
+                return
             self._start_drag(event)
 
         elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
+            if self.scrollbar_dragging:
+                self.scrollbar_dragging = False
+                return
             self._stop_drag(event)
+
+        elif event.type == pg.MOUSEMOTION:
+            if self.scrollbar_dragging:
+                self._update_scrollbar_drag(event.pos)
+                return
 
         # Retirer un vêtement porté via clic droit (optionnel mais utile pour changer de tenue)
         elif event.type == pg.MOUSEBUTTONDOWN and event.button == 3:
@@ -243,10 +273,8 @@ class DressScene(Scene):  # Écran d'habillage
 
 
     def _draw_sidebar(self, screen):
-        """Draw the sidebar background and title."""
+        """Draw the sidebar background."""
         pg.draw.rect(screen, (250,250,255), self.sidebar)
-        title = self.big.render(f"Thème: {self.theme_label}", True, (20,20,50))
-        screen.blit(title, (20, self.game.h - 40))
 
     def _draw_gallery_items(self, screen):
         """Draw gallery labels and draggable items in the sidebar."""
@@ -331,6 +359,11 @@ class DressScene(Scene):  # Écran d'habillage
         """Draw the hint text at the bottom of the stage."""
         hint = self.font.render("Molette = défiler | Entrée = valider", True, (30,30,60))
         screen.blit(hint, (self.stage.left + 20, self.game.h - 30))
+        
+        # Afficher le thème en haut à droite de la scène
+        title = self.big.render(f"Thème: {self.theme_label}", True, (20,20,50))
+        title_x = self.game.w - title.get_width() - 20
+        screen.blit(title, (title_x, 20))
 
     def draw(self, screen):
         self._draw_sidebar(screen)
@@ -371,3 +404,67 @@ class DressScene(Scene):  # Écran d'habillage
 
         # Déclenche la transition vers l'écran de résultat
         self.game.goto_result(self.mannequin, (self.theme_code, self.theme_label), self.outfit)
+
+    def set_gallery_layout(self, cols: int | None = None, thumb_size: tuple[int, int] | None = None):
+        """Change la mise en page du catalogue et reconstruit la galerie.
+        Exemple: self.set_gallery_layout(1, (260, 260)) ou self.set_gallery_layout(2, (180, 180)).
+        """
+        if cols is not None:
+            self.gallery_cols = max(1, int(cols))
+        if thumb_size is not None:
+            self.thumb_size = (int(thumb_size[0]), int(thumb_size[1]))
+        self._build_gallery()
+        self._clamp_scroll()
+
+    def _try_start_scrollbar_drag(self, pos) -> bool:
+        """Démarre le drag de scrollbar si clic sur thumb, ou jump si clic sur rail. Retourne True si traité."""
+        if self.content_height <= self.sidebar.height:
+            return False
+
+        view_ratio = self.sidebar.height / self.content_height
+        thumb_h = max(30, int(self.sidebar.height * view_ratio))
+        max_scroll = self.content_height - self.sidebar.height
+        thumb_y = int((self.scroll_y / max_scroll) * (self.sidebar.height - thumb_h)) if max_scroll > 0 else 0
+
+        rail = pg.Rect(self.sidebar.right - 10, 10, 4, self.sidebar.height - 20)
+        thumb = pg.Rect(self.sidebar.right - 14, 10 + thumb_y, 12, thumb_h)
+
+        # Clic sur le thumb: drag
+        if thumb.collidepoint(pos):
+            self.scrollbar_dragging = True
+            self.scrollbar_drag_offset = pos[1] - thumb.top
+            return True
+
+        # Clic sur le rail: jump à la position
+        if rail.collidepoint(pos) or (self.sidebar.right - 14 <= pos[0] <= self.sidebar.right - 2 and 10 <= pos[1] <= self.sidebar.height - 10):
+            # Calculer le scroll_y correspondant au clic
+            rail_h = self.sidebar.height - 20
+            click_y = pos[1] - 10
+            ratio = click_y / rail_h if rail_h > 0 else 0
+            self.scroll_y = int(ratio * max_scroll)
+            self._clamp_scroll()
+            # Commencer le drag pour suivre la souris
+            self.scrollbar_dragging = True
+            self.scrollbar_drag_offset = thumb_h // 2
+            return True
+
+        return False
+
+    def _update_scrollbar_drag(self, pos):
+        """Met à jour scroll_y en fonction du mouvement de la souris pendant le drag."""
+        if self.content_height <= self.sidebar.height:
+            return
+
+        view_ratio = self.sidebar.height / self.content_height
+        thumb_h = max(30, int(self.sidebar.height * view_ratio))
+        max_scroll = self.content_height - self.sidebar.height
+        rail_h = self.sidebar.height - 20
+
+        # Calculer la position du thumb en fonction de la souris
+        thumb_top = pos[1] - 10 - self.scrollbar_drag_offset
+        thumb_top = max(0, min(thumb_top, rail_h - thumb_h))
+
+        # Convertir en scroll_y
+        ratio = thumb_top / (rail_h - thumb_h) if (rail_h - thumb_h) > 0 else 0
+        self.scroll_y = int(ratio * max_scroll)
+        self._clamp_scroll()
