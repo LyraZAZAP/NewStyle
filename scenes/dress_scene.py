@@ -162,36 +162,39 @@ class DressScene(Scene):  # Écran d'habillage
             item.pos = pg.Vector2(mouse) - item.offset
 
 
-    def draw(self, screen):
-        # Sidebar
+    def _draw_sidebar(self, screen):
+        """Draw the sidebar background and title."""
         pg.draw.rect(screen, (250,250,255), self.sidebar)
-        title = self.big.render(f"Thème: {self.theme_label}", True, (20,20,50)) #a changer
-        screen.blit(title, (20, self.game.h - 40)) #a changer
+        title = self.big.render(f"Thème: {self.theme_label}", True, (20,20,50))
+        screen.blit(title, (20, self.game.h - 40))
 
+    def _draw_gallery_items(self, screen):
+        """Draw gallery labels and draggable items in the sidebar."""
         for it in self.gallery_items:
             if isinstance(it, tuple) and it[0] == "label":
                 surf, (x, y) = it[1], it[2]
                 draw_y = y - self.scroll_y
                 if self.sidebar.top <= draw_y <= self.sidebar.bottom:
                     screen.blit(surf, (x, draw_y))
-            elif isinstance(it, Draggable):
-                # Ne pas afficher les vêtements déjà portés (ils sont dans worn_items et s'affichent après)
-                if it.garment.id in self.worn_items:
-                    continue
+            elif isinstance(it, Draggable) and it.garment.id not in self.worn_items:
                 if it.grab:
                     screen.blit(it.image, it.pos)
                 else:
                     draw_pos = (it.base_pos.x, it.base_pos.y - self.scroll_y)
                     screen.blit(it.image, draw_pos)
 
+    def _draw_stage(self, screen):
+        """Draw the stage background and mannequin."""
         pg.draw.rect(screen, (235,240,250), self.stage)
         screen.blit(self.mannequin_img, (self.stage.left + 180, 80))
 
-        # Items portés par-dessus le mannequin
+    def _draw_worn_items(self, screen):
+        """Draw items currently worn by the mannequin."""
         for it in self.worn_items.values():
             screen.blit(it.image, it.pos)
 
-        # Barre de scroll (thumb) dans la sidebar (optionnel)
+    def _draw_scrollbar(self, screen):
+        """Draw the scrollbar thumb in the sidebar."""
         if self.content_height > self.sidebar.height:
             view_ratio = self.sidebar.height / self.content_height
             thumb_h = max(30, int(self.sidebar.height * view_ratio))
@@ -201,6 +204,16 @@ class DressScene(Scene):  # Écran d'habillage
             thumb = pg.Rect(self.sidebar.right - 14, 10 + thumb_y, 12, thumb_h)
             pg.draw.rect(screen, (220,220,230), rail, border_radius=2)
             pg.draw.rect(screen, (160,160,180), thumb, border_radius=4)
-        
+
+    def _draw_hint(self, screen):
+        """Draw the hint text at the bottom of the stage."""
         hint = self.font.render("Molette = défiler | Entrée = valider", True, (30,30,60))
         screen.blit(hint, (self.stage.left + 20, self.game.h - 30))
+
+    def draw(self, screen):
+        self._draw_sidebar(screen)
+        self._draw_gallery_items(screen)
+        self._draw_stage(screen)
+        self._draw_worn_items(screen)
+        self._draw_scrollbar(screen)
+        self._draw_hint(screen)
