@@ -50,7 +50,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
     def draw(self, screen):  # Dessine l'écran du menu
         screen.blit(self.bg, (0, 0))  # Dessiner le fond en premier
-        title = self.title_font.render("Jeu de Dressing", True, (30, 30, 60))  # rend le titre
+        title = self.title_font.render("Regardez mon beau jeu", True, (179,0,248))  # rend le titre
         title_rect = title.get_rect(center=(screen.get_width() // 2, 120))
         # Encadré blanc semi-transparent derrière le titre
         bg_rect = title_rect.inflate(40, 20)
@@ -65,7 +65,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         # Dessiner le bouton fullscreen
         color = (100, 150, 255) if self.fullscreen_btn.collidepoint(pg.mouse.get_pos()) else (70, 120, 200)
         pg.draw.rect(screen, color, self.fullscreen_btn, border_radius=5)
-        pg.draw.rect(screen, (255, 255, 255), self.fullscreen_btn, 2, border_radius=5)
+        pg.draw.rect(screen, (179,0,248), self.fullscreen_btn, 5, border_radius=5)
 
         label = "Plein écran" if not self.game.is_fullscreen else "Fenêtré"
         text = self.font_small.render(label, True, (255, 255, 255))
