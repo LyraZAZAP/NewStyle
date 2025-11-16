@@ -10,7 +10,9 @@ SCROLL_SPEED = 40  # Vitesse de défilement de la galerie
 class Draggable:  # Petit objet qui représente un vêtement draggable (glissable)
     def __init__(self, garment, image, pos):
         self.garment = garment  # dataclass Garment associée
-        self.image = image  # surface pygame contenant le sprite/aperçu
+        self.thumb = image  # vignette pour la galerie
+        self.image = image  # surface pygame contenant le sprite/aperçu (alias)
+        self.stage_image = None  # image utilisée quand l'article est porté (taille du mannequin)
         self.base_pos = pg.Vector2(pos)  # position de base dans la galerie
         self.pos = pg.Vector2(pos)  # position flottante (x,y)
         self.grab = False  # True si l'utilisateur tient l'objet
@@ -138,11 +140,24 @@ class DressScene(Scene):  # Écran d'habillage
                 self._drop_outside_stage(item)
 
     def _drop_on_stage(self, item):
-        """Try to add the item to the outfit and position it, otherwise return to sidebar."""
+        """Try to add the item to the outfit and position it, otherwise return to sidebar.
+
+        This variant scales the garment image to the exact size of the mannequin image
+        so the clothing appears at the mannequin's original size.
+        """
         if self.outfit.can_add(item.garment):
             self.outfit.add(item.garment)  # ajoute le vêtement à la tenue
-            # position autour du mannequin (exemple)
-            item.pos = pg.Vector2(520, 120)
+            # Récupère la taille du sprite du mannequin
+            m_img = self.mannequin_img
+            m_w, m_h = m_img.get_width(), m_img.get_height()
+            # Position réelle du mannequin sur l'écran (centré dans la zone stage)
+            mannequin_x = self.stage.left + (self.stage.width - m_w) // 2 + 10 
+            mannequin_y = 80
+
+            # Redimensionne l'image du vêtement à la taille du mannequin
+            item.stage_image = self._safe_load(item.garment.sprite_path, size=(m_w, m_h))
+            # Place l'image au-dessus du mannequin (coordonnées écran)
+            item.pos = pg.Vector2(mannequin_x, mannequin_y)
             self.worn_items[item.garment.id] = item  # mémorise comme porté
         else:
             # Repositionner dans la sidebar si quota atteint
@@ -191,7 +206,8 @@ class DressScene(Scene):  # Écran d'habillage
     def _draw_worn_items(self, screen):
         """Draw items currently worn by the mannequin."""
         for it in self.worn_items.values():
-            screen.blit(it.image, it.pos)
+            img = it.stage_image if getattr(it, 'stage_image', None) is not None else it.image
+            screen.blit(img, it.pos)
 
     def _draw_scrollbar(self, screen):
         """Draw the scrollbar thumb in the sidebar."""
