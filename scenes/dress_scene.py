@@ -167,7 +167,7 @@ class DressScene(Scene):  # Écran d'habillage
             m_img = self.mannequin_img
             m_w, m_h = m_img.get_width(), m_img.get_height()
             # Position réelle du mannequin sur l'écran (centré dans la zone stage)
-            mannequin_x = self.stage.left + (self.stage.width - m_w) // 2 + 10 
+            mannequin_x = self.stage.left + (self.stage.width - m_w) // 2 + 8
             mannequin_y = 80
 
             # Redimensionne l'image du vêtement à la taille du mannequin
