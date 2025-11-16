@@ -2,6 +2,17 @@ import os
 import pygame as pg  # pygame importé sous le nom pg
 from scenes.base_scene import Scene  # classe de base pour les scènes
 from services import Scoring  # utilitaire de scoring
+from config import RESULT_BG_PATH
+
+
+def _load_background(path, size, fallback_color=(240, 240, 250)):
+    if os.path.exists(path):
+        img = pg.image.load(path)
+        img = img.convert() if img.get_alpha() is None else img.convert_alpha()
+        return pg.transform.smoothscale(img, size)
+    surf = pg.Surface(size)
+    surf.fill(fallback_color)
+    return surf
 
 
 class ResultScene(Scene):  # Écran affichant le résultat après validation d'une tenue
@@ -30,6 +41,9 @@ class ResultScene(Scene):  # Écran affichant le résultat après validation d'u
         # Calcul du score et de l'argent gagné
         self.score = Scoring.score(self.theme_code, self.outfit.all_items())  # calcule le score total
         self.money = int(self.score / 10) * 5  # conversion simple score -> argent
+
+        # Charger le fond d'écran
+        self.bg = _load_background(RESULT_BG_PATH, (self.game.w, self.game.h))
 
     def _safe_load(self, path, size=(360, 520)):
         if os.path.exists(path):
@@ -70,7 +84,7 @@ class ResultScene(Scene):  # Écran affichant le résultat après validation d'u
 
 
     def draw(self, screen):  # Dessine l'écran résultat
-        screen.fill((240, 240, 250))
+        screen.blit(self.bg, (0, 0))  # Dessiner le fond en premier
         
         # Panneau gauche: score et infos
         pg.draw.rect(screen, (255, 255, 255), self.left_panel)

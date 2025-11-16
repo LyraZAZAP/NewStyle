@@ -14,8 +14,8 @@ class Game:  # Classe principale du jeu : gère la boucle, la fenêtre et la sc�
     def __init__(self):
         pg.init()  # initialise pygame
         self.w, self.h = WINDOW_WIDTH, WINDOW_HEIGHT  # taille de la fenêtre
-        # utiliser SCALED pour faciliter le plein écran sans changer la logique interne
-        self.screen = pg.display.set_mode((self.w, self.h), pg.SCALED)
+        # Retirer pg.SCALED pour que la fenêtre change vraiment de taille
+        self.screen = pg.display.set_mode((self.w, self.h))
         pg.display.set_caption(TITLE)  # titre de la fenêtre
         self.clock = pg.time.Clock()  # horloge pour contrôler la cadence
         self.scene = MenuScene(self)  # scène initiale (menu)
@@ -56,7 +56,7 @@ class Game:  # Classe principale du jeu : gère la boucle, la fenêtre et la sc�
     def toggle_fullscreen(self):
         """Bascule fenêtre <-> plein écran sans changer la résolution logique."""
         self.is_fullscreen = not self.is_fullscreen
-        flags = pg.SCALED | (pg.FULLSCREEN if self.is_fullscreen else 0)
+        flags = pg.FULLSCREEN if self.is_fullscreen else 0
         self.screen = pg.display.set_mode((self.w, self.h), flags)
 
 

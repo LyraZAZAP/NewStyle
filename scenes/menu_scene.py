@@ -1,9 +1,11 @@
 import random  # utilitaire pour choisir aléatoirement
+import os
 import pygame as pg  # pygame importé sous le nom pg
 from scenes.base_scene import Scene  # classe de base pour les scènes
 from ui.widgets import Button  # widget bouton réutilisable
 from repositories import MannequinRepo  # repo pour récupérer les mannequins
 from models import Mannequin
+from config import MENU_BG_PATH
 
 THEMES = [  # liste des thèmes disponibles (code, label)
     ("casual", "Casual"),
@@ -11,6 +13,16 @@ THEMES = [  # liste des thèmes disponibles (code, label)
     ("colorful", "Colorful"),
     ("chic", "Chic"),
 ]
+
+
+def _load_background(path, size, fallback_color=(240, 240, 245)):
+    if os.path.exists(path):
+        img = pg.image.load(path)
+        img = img.convert() if img.get_alpha() is None else img.convert_alpha()
+        return pg.transform.smoothscale(img, size)
+    surf = pg.Surface(size)
+    surf.fill(fallback_color)
+    return surf
 
 
 class MenuScene(Scene):  # Écran d'accueil / menu principal
@@ -33,8 +45,11 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         self.fullscreen_btn = pg.Rect(self.game.w - 120, 10, 110, 40)
         self.font_small = pg.font.SysFont(None, 24)
 
+        # Charger le fond d'écran
+        self.bg = _load_background(MENU_BG_PATH, (self.game.w, self.game.h))
+
     def draw(self, screen):  # Dessine l'écran du menu
-        screen.fill((240, 240, 245))  # fond clair
+        screen.blit(self.bg, (0, 0))  # Dessiner le fond en premier
         title = self.title_font.render("Jeu de Dressing", True, (30, 30, 60))  # rend le titre
         screen.blit(title, (screen.get_width() // 2 - title.get_width() // 2, 120))  # centre horizontalement le titre
         for b in self.buttons:  # dessine tous les boutons

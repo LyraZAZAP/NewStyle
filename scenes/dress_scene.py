@@ -5,8 +5,19 @@ from typing import Dict  # annotation de type pour dictionnaires
 from scenes.base_scene import Scene  # classe de base pour les scènes
 from repositories import CategoryRepo, GarmentRepo  # accès aux données catégories/vêtements
 from services import Outfit  # logique de tenue (Outfit)
+from config import SIDEBAR_BG_PATH, STAGE_BG_PATH
 
 SCROLL_SPEED = 40  # Vitesse de défilement de la galerie
+
+def _load_background(path, size, fallback_color):
+    """Charge et redimensionne une image de fond, ou retourne une surface unie."""
+    if os.path.exists(path):
+        img = pg.image.load(path)
+        img = img.convert() if img.get_alpha() is None else img.convert_alpha()
+        return pg.transform.smoothscale(img, size)
+    surf = pg.Surface(size)
+    surf.fill(fallback_color)
+    return surf
 
 class Draggable:  # Petit objet qui représente un vêtement draggable (glissable)
     def __init__(self, garment, image, pos):
@@ -50,6 +61,9 @@ class DressScene(Scene):  # Écran d'habillage
         self.sidebar = pg.Rect(0, 0, 320, self.game.h)  # zone de gauche (galerie)
         self.stage = pg.Rect(320, 0, self.game.w-320, self.game.h)  # zone principale (mannequin)
 
+        # Charger les fonds d'écran
+        self.sidebar_bg = _load_background(SIDEBAR_BG_PATH, (self.sidebar.width, self.sidebar.height), (250, 250, 255))
+        self.stage_bg = _load_background(STAGE_BG_PATH, (self.stage.width, self.stage.height), (235, 240, 250))
 
         # Nettoie les __pycache__ éventuels pour éviter les modules dupliqués
         try:
@@ -274,7 +288,7 @@ class DressScene(Scene):  # Écran d'habillage
 
     def _draw_sidebar(self, screen):
         """Draw the sidebar background."""
-        pg.draw.rect(screen, (250,250,255), self.sidebar)
+        screen.blit(self.sidebar_bg, self.sidebar.topleft)
 
     def _draw_gallery_items(self, screen):
         """Draw gallery labels and draggable items in the sidebar."""
@@ -293,7 +307,7 @@ class DressScene(Scene):  # Écran d'habillage
 
     def _draw_stage(self, screen):
         """Draw the stage background and mannequin."""
-        pg.draw.rect(screen, (235,240,250), self.stage)
+        screen.blit(self.stage_bg, self.stage.topleft)
         screen.blit(self.mannequin_img, (self.stage.left + 180, 80))
 
     def _draw_worn_items(self, screen):
