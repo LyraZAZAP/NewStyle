@@ -124,7 +124,9 @@ class DressScene(Scene):  # Écran d'habillage
         elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
             self._stop_drag(event)
 
-
+        # Traitement de la touche Entrée pour valider la tenue
+        elif event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+            self._validate_outfit()
 
     def _start_drag(self, event):
         """Begin dragging the topmost draggable under the cursor."""
@@ -266,3 +268,18 @@ class DressScene(Scene):  # Écran d'habillage
                     except Exception:
                         # ignorer les erreurs de suppression pour ne pas casser l'init
                         pass
+
+    def _validate_outfit(self):
+        """Valide la tenue actuelle et déclenche la transition vers l'écran de fin."""
+        # Vérifie qu'au moins un vêtement a été sélectionné
+        if len(self.worn_items) == 0:
+            print("Veuillez sélectionner au moins un vêtement.")
+            return
+
+        # Affiche la tenue validée (debug)
+        print(f"Tenue validée avec {len(self.worn_items)} vêtement(s):")
+        for garment_id, item in self.worn_items.items():
+            print(f"  - {item.garment.name if hasattr(item.garment, 'name') else 'Inconnu'} (ID: {garment_id})")
+
+        # Déclenche la transition vers l'écran de résultat
+        self.game.goto_result(self.mannequin, (self.theme_code, self.theme_label), self.outfit)
