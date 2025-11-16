@@ -402,8 +402,11 @@ class DressScene(Scene):  # Écran d'habillage
         for garment_id, item in self.worn_items.items():
             print(f"  - {item.garment.name if hasattr(item.garment, 'name') else 'Inconnu'} (ID: {garment_id})")
 
-        # Déclenche la transition vers l'écran de résultat
-        self.game.goto_result(self.mannequin, (self.theme_code, self.theme_label), self.outfit)
+        # Extraire les garments depuis worn_items
+        worn_garments = [item.garment for item in self.worn_items.values()]
+        
+        # Déclenche la transition vers l'écran de résultat avec la liste des vêtements
+        self.game.goto_result(self.mannequin, (self.theme_code, self.theme_label), self.outfit, worn_garments)
 
     def set_gallery_layout(self, cols: int | None = None, thumb_size: tuple[int, int] | None = None):
         """Change la mise en page du catalogue et reconstruit la galerie.

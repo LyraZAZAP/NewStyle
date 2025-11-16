@@ -31,8 +31,8 @@ class Game:  # Classe principale du jeu : gère la boucle, la fenêtre et la sc�
         self.scene = DressScene(self, mannequin, theme)
 
 
-    def goto_result(self, mannequin, theme, outfit):  # ouvre l'écran de résultat
-        self.scene = ResultScene(self, mannequin, theme, outfit)
+    def goto_result(self, mannequin, theme, outfit, worn_garments):  # ouvre l'écran de résultat
+        self.scene = ResultScene(self, mannequin, theme, outfit, worn_garments)
 
 
     def cleanup(self):
