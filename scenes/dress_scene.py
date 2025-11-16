@@ -258,7 +258,7 @@ class DressScene(Scene):  # Écran d'habillage
         # on prend le dossier parent (le package NewStyle)
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         for root, dirs, files in os.walk(base_dir):
-            for d in list(dirs):
+            for d in dirs:
                 if d == "__pycache__":
                     full = os.path.join(root, d)
                     try:
