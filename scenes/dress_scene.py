@@ -1,4 +1,5 @@
 import os  # opérations système (ex: vérifier l'existence d'un fichier)
+import shutil  # pour supprimer récursivement les __pycache__
 import pygame as pg  # wrapper pygame importé sous le nom pg
 from typing import Dict  # annotation de type pour dictionnaires
 from scenes.base_scene import Scene  # classe de base pour les scènes
@@ -47,6 +48,13 @@ class DressScene(Scene):  # Écran d'habillage
         self.stage = pg.Rect(320, 0, self.game.w-320, self.game.h)  # zone principale (mannequin)
 
 
+        # Nettoie les __pycache__ éventuels pour éviter les modules dupliqués
+        try:
+            self._clean_pycache()
+        except Exception:
+            # ne pas empêcher le lancement en cas d'erreur sur la suppression
+            pass
+
         # Mannequin / background (placeholder si fichier manquant)
         self.mannequin_img = self._safe_load(self.mannequin.base_sprite_path, size=(360,520), fill=(230,220,220))
         self._build_gallery()  # construit la galerie d'images à partir des catégories
@@ -67,8 +75,12 @@ class DressScene(Scene):  # Écran d'habillage
 
     def _build_gallery(self):
         """Remplit self.gallery_items avec des labels de catégories et des Draggable pour chaque vêtement."""
+        # Protection : vider la galerie avant de la reconstruire (évite les doublons si appelé plusieurs fois)
+        self.gallery_items.clear()
+
         y = 20
         max_x = 0
+        seen_ids = set()  # évite d'ajouter deux fois un même vêtement
         for cat in self.categories:
             garments = GarmentRepo.by_category(cat.id)  # récupère les vêtements de la catégorie
             label = self.big.render(cat.name.upper(), True, (40,40,70))  # rend le titre de la catégorie
@@ -76,8 +88,12 @@ class DressScene(Scene):  # Écran d'habillage
             y += 36
             x = 20
             for g in garments:
+                if getattr(g, "id", None) in seen_ids:
+                    continue
+                seen_ids.add(getattr(g, "id", None))
+
                 img = self._safe_load(g.sprite_path, size=(80,80))  # charge ou placeholder
-                d = Draggable( g, img, (x, y))  # crée un objet Draggable IMPORTANT  
+                d = Draggable(g, img, (x, y))  # crée un objet Draggable IMPORTANT
                 self.gallery_items.append(d)  # ajoute à la galerie
                 x += 90
                 max_x = max(max_x, x)
@@ -233,3 +249,20 @@ class DressScene(Scene):  # Écran d'habillage
         self._draw_worn_items(screen)
         self._draw_scrollbar(screen)
         self._draw_hint(screen)
+    # Nouvelle méthode : supprime récursivement tous les dossiers __pycache__ sous le dossier du module
+    def _clean_pycache(self):
+        """
+        Parcourt le dossier parent (le package NewStyle) et supprime tous les répertoires __pycache__.
+        Permet d'éviter que des modules chargés depuis des chemins différents créent des doublons.
+        """
+        # on prend le dossier parent (le package NewStyle)
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        for root, dirs, files in os.walk(base_dir):
+            for d in list(dirs):
+                if d == "__pycache__":
+                    full = os.path.join(root, d)
+                    try:
+                        shutil.rmtree(full)
+                    except Exception:
+                        # ignorer les erreurs de suppression pour ne pas casser l'init
+                        pass
