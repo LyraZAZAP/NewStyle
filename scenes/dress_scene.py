@@ -117,38 +117,34 @@ class DressScene(Scene):  # Écran d'habillage
                 self._clamp_scroll()
             return # ignore les autres events de souris dans la sidebar
         
-        # Delegate drag start/stop to helper methods (handles scroll-affected hit testing)
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
             self._start_drag(event)
 
         elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
             self._stop_drag(event)
 
-        # Traitement de la touche Entrée pour valider la tenue
+        # Retirer un vêtement porté via clic droit (optionnel mais utile pour changer de tenue)
+        elif event.type == pg.MOUSEBUTTONDOWN and event.button == 3:
+            self._try_remove_worn_at(event.pos)
+
         elif event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
             self._validate_outfit()
 
+    # Réassure la présence des handlers de drag (écrase toute ancienne définition si nécessaire)
     def _start_drag(self, event):
-        """Begin dragging the topmost draggable under the cursor."""
-        # Build list of draggables (topmost last) and test their displayed rects (account for scroll)
+        """Commence le drag sur l’item le plus haut sous le curseur (galerie)."""
         draggables = [i for i in self.gallery_items if isinstance(i, Draggable)]
         for item in reversed(draggables):
-            # compute where the item is drawn when not grabbed (gallery position adjusted by scroll)
-            if item.grab:
-                draw_pos = pg.Vector2(item.pos)
-            else:
-                draw_pos = pg.Vector2(item.base_pos.x, item.base_pos.y - self.scroll_y)
-
+            draw_pos = pg.Vector2(item.pos) if item.grab else pg.Vector2(item.base_pos.x, item.base_pos.y - self.scroll_y)
             rect = item.image.get_rect(topleft=(int(draw_pos.x), int(draw_pos.y)))
             if rect.collidepoint(event.pos):
                 item.grab = True
-                # set its pos to the draw position (screen coords) and compute offset mouse->image
                 item.pos = pg.Vector2(draw_pos)
                 item.offset = pg.Vector2(event.pos) - item.pos
                 break
 
     def _stop_drag(self, event):
-        """Handle release: place on stage, return to sidebar or remove from outfit."""
+        """Termine le drag: pose sur la scène si dans le stage, sinon retour/cleanup."""
         grabbed = [i for i in self.gallery_items if isinstance(i, Draggable) and i.grab]
         for item in grabbed:
             item.grab = False
@@ -156,37 +152,88 @@ class DressScene(Scene):  # Écran d'habillage
                 self._drop_on_stage(item)
             else:
                 self._drop_outside_stage(item)
+                # Option: remettre l’image de vignette pour la galerie
+                item.image = item.thumb
+
+    def _drop_outside_stage(self, item):
+        """Remet l'item dans la galerie s'il n'est pas déposé sur la scène."""
+        # Si l'item était porté, le retirer de la tenue
+        if item.garment.id in self.worn_items:
+            try:
+                self.outfit.remove(item.garment)
+            except Exception:
+                pass
+            del self.worn_items[item.garment.id]
+        # Restaurer l'affichage galerie
+        self._restore_to_gallery(item)
+        # Replacer logiquement à sa position de base (pour cohérence lors d'un prochain drag)
+        item.pos = pg.Vector2(item.base_pos)
+
+    # Helpers pour catégorie / remplacement
+    def _get_category_id(self, garment):
+        return getattr(garment, "category_id", None)
+
+    def _find_worn_in_category(self, category_id):
+        if category_id is None:
+            return None
+        for it in self.worn_items.values():
+            if self._get_category_id(it.garment) == category_id:
+                return it
+        return None
+
+    def _apply_worn_visuals(self, item):
+        """Affecte stage_image et positionne l'item sur le mannequin."""
+        m_img = self.mannequin_img
+        m_w, m_h = m_img.get_width(), m_img.get_height()
+        mannequin_x = self.stage.left + (self.stage.width - m_w) // 2 + 8
+        mannequin_y = 80
+        item.stage_image = self._safe_load(item.garment.sprite_path, size=(m_w, m_h))
+        item.pos = pg.Vector2(mannequin_x, mannequin_y)
+
+    def _restore_to_gallery(self, item):
+        """Réinitialise l'item pour la galerie (sortie du mannequin)."""
+        item.stage_image = None
+        item.image = item.thumb
+
+    def _try_remove_worn_at(self, pos):
+        """Retire l'item porté cliqué (clic droit) si collision."""
+        # Parcourt du haut vers le bas pour cliquer l'item visible au-dessus
+        for it in sorted(self.worn_items.values(), key=lambda i: self._layer_for(i.garment), reverse=True):
+            img = it.stage_image if getattr(it, 'stage_image', None) is not None else it.image
+            rect = img.get_rect(topleft=(int(it.pos.x), int(it.pos.y)))
+            if rect.collidepoint(pos):
+                # enlever de l'outfit + remettre en galerie
+                self.outfit.remove(it.garment)
+                self._restore_to_gallery(it)
+                del self.worn_items[it.garment.id]
+                break
 
     def _drop_on_stage(self, item):
         """Try to add the item to the outfit and position it, otherwise return to sidebar.
 
-        This variant scales the garment image to the exact size of the mannequin image
-        so the clothing appears at the mannequin's original size.
+        This variant allows replacing existing item from the same category.
         """
+        cat_id = self._get_category_id(item.garment)
         if self.outfit.can_add(item.garment):
-            self.outfit.add(item.garment)  # ajoute le vêtement à la tenue
-            # Récupère la taille du sprite du mannequin
-            m_img = self.mannequin_img
-            m_w, m_h = m_img.get_width(), m_img.get_height()
-            # Position réelle du mannequin sur l'écran (centré dans la zone stage)
-            mannequin_x = self.stage.left + (self.stage.width - m_w) // 2 + 8
-            mannequin_y = 80
-
-            # Redimensionne l'image du vêtement à la taille du mannequin
-            item.stage_image = self._safe_load(item.garment.sprite_path, size=(m_w, m_h))
-            # Place l'image au-dessus du mannequin (coordonnées écran)
-            item.pos = pg.Vector2(mannequin_x, mannequin_y)
-            self.worn_items[item.garment.id] = item  # mémorise comme porté
+            self.outfit.add(item.garment)
+            self._apply_worn_visuals(item)
+            self.worn_items[item.garment.id] = item
         else:
-            # Repositionner dans la sidebar si quota atteint
-            item.pos = pg.Vector2(20, item.pos.y)
-
-    def _drop_outside_stage(self, item):
-        """Remove the item from the outfit if dropped outside the stage."""
-        self.outfit.remove(item.garment)
-        if item.garment.id in self.worn_items:
-            del self.worn_items[item.garment.id]
-
+            # Essayer de remplacer l'article existant de la même catégorie
+            existing = self._find_worn_in_category(cat_id)
+            if existing is not None:
+                # retirer l'existant
+                self.outfit.remove(existing.garment)
+                self._restore_to_gallery(existing)
+                if existing.garment.id in self.worn_items:
+                    del self.worn_items[existing.garment.id]
+                # ajouter le nouveau
+                self.outfit.add(item.garment)
+                self._apply_worn_visuals(item)
+                self.worn_items[item.garment.id] = item
+            else:
+                # Pas possible de remplacer -> retour sidebar
+                item.pos = pg.Vector2(20, item.pos.y)
 
     def update(self, dt):
         # Met à jour la position des objets en cours de drag
