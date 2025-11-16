@@ -63,7 +63,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
             b.draw(screen)
 
         # Dessiner le bouton fullscreen
-        color = (100, 150, 255) if self.fullscreen_btn.collidepoint(pg.mouse.get_pos()) else (70, 120, 200)
+        color = (100, 150, 255) if self.fullscreen_btn.collidepoint(pg.mouse.get_pos()) else (249,216,251)
         pg.draw.rect(screen, color, self.fullscreen_btn, border_radius=5)
         pg.draw.rect(screen, (179,0,248), self.fullscreen_btn, 5, border_radius=5)
 
