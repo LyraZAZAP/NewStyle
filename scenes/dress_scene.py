@@ -222,10 +222,51 @@ class DressScene(Scene):  # Écran d'habillage
         screen.blit(self.mannequin_img, (self.stage.left + 180, 80))
 
     def _draw_worn_items(self, screen):
-        """Draw items currently worn by the mannequin."""
-        for it in self.worn_items.values():
+        """Draw items currently worn by the mannequin en respectant l'ordre des calques."""
+        items = sorted(self.worn_items.values(), key=lambda it: self._layer_for(it.garment))
+        for it in items:
             img = it.stage_image if getattr(it, 'stage_image', None) is not None else it.image
             screen.blit(img, it.pos)
+
+    # --- Helpers d'ordre de superposition ---
+    def _category_name(self, garment) -> str:
+        """Retourne le nom de catégorie en MAJ, via category_id sinon via attributs textuels."""
+        cid = getattr(garment, "category_id", None)
+        if cid is not None:
+            for c in self.categories:
+                if getattr(c, "id", None) == cid:
+                    return str(getattr(c, "name", "")).upper()
+        # fallback: lire des champs textuels usuels
+        for attr in ("category", "type", "name"):
+            val = getattr(garment, attr, None)
+            if isinstance(val, str):
+                return val.upper()
+        return ""
+
+    def _layer_for(self, garment) -> int:
+        """
+        Renvoie l'indice de calque (0=fond -> 5=avant) selon la catégorie:
+        shoes(0) < bottom(1) < top(2) < hair(3) < face(4) < accessories(5)
+        """
+        name = self._category_name(garment)
+
+        def has(*tokens):
+            return any(tok in name for tok in tokens)
+
+        if has("SHOE", "CHAUSSURE", "FEET"):
+            return 0  # shoes
+        if has("BOTTOM", "BAS", "PANTS", "PANTALON", "SKIRT", "JUPE", "SHORT", "JEAN"):
+            return 1  # bottom
+        if has("TOP", "HAUT", "SHIRT", "DRESS", "ROBE", "COAT", "MANTEAU", "JACKET", "VESTE", "SWEATER", "PULL"):
+            return 2  # top
+        if has("HAIR", "CHEVEU", "HEAD", "CHAPEAU", "HAT"):
+            return 3  # hair
+        if has("FACE", "VISAGE", "MASK", "MASQUE", "GLASSES", "LUNETTE"):
+            return 4  # face
+        if has("ACCESSORY", "ACCESSOIRE", "ACC"):
+            return 5  # accessories
+
+        return 2  # défaut: milieu (top)
 
     def _draw_scrollbar(self, screen):
         """Draw the scrollbar thumb in the sidebar."""
