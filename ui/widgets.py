@@ -10,9 +10,9 @@ class Button:  # Widget simple de bouton
 
 
     def draw(self, surf):  # Dessine le bouton sur la surface `surf`
-        pg.draw.rect(surf, (220,220,230), self.rect, border_radius=10)  # fond clair arrondi
-        pg.draw.rect(surf, (100,100,120), self.rect, 2, border_radius=10)  # contour plus foncé
-        label = self.font.render(self.text, True, (20,20,30))  # rend le texte en couleur sombre
+        pg.draw.rect(surf, (220,220,230), self.rect, border_radius = 10)  # fond clair arrondi
+        pg.draw.rect(surf, (208,161,255), self.rect, 2, border_radius = 20)  # contour plus foncé
+        label = self.font.render(self.text, True, (208,161,255))  # rend le texte en couleur sombre
         surf.blit(label, label.get_rect(center=self.rect.center))  # centre le label dans le rect
 
 
