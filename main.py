@@ -1,3 +1,4 @@
+import os  # pour supprimer le fichier game.db
 import pygame as pg  # wrapper pygame
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TITLE, BACKGROUND_COLOR  # constantes de configuration
 from scenes.menu_scene import MenuScene  # écran menu
@@ -28,6 +29,16 @@ class Game:  # Classe principale du jeu : gère la boucle, la fenêtre et la sc�
         self.scene = ResultScene(self, mannequin, theme, outfit)
 
 
+    def cleanup(self):
+        """Supprime le fichier game.db à la fermeture du jeu."""
+        try:
+            if os.path.exists("game.db"):
+                os.remove("game.db")
+                print("game.db supprimé.")
+        except Exception as e:
+            print(f"Erreur lors de la suppression de game.db : {e}")
+
+
     def run(self):  # Boucle principale du jeu
         while self.running:
             dt = self.clock.tick(FPS) / 1000.0  # temps écoulé en secondes depuis la frame précédente
@@ -39,6 +50,7 @@ class Game:  # Classe principale du jeu : gère la boucle, la fenêtre et la sc�
             self.scene.update(dt)  # mettre à jour la scène
             self.scene.draw(self.screen)  # dessiner la scène
             pg.display.flip()  # actualiser l'affichage
+        self.cleanup()  # nettoyer avant de quitter
         pg.quit()  # quitter pygame proprement
 
 
