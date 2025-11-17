@@ -111,7 +111,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
         # Texte du bouton change selon l'état actuel (fenêtré ou plein écran)
         label = "Plein écran" if not self.game.is_fullscreen else "Fenêtré"
-        text = self.font_small.render(label, True, (255, 255, 255))  # texte blanc
+        text = self.font_small.render(label, True, (255, 255, 255))  # texte de couleur ( rose-violet clair)
         text_rect = text.get_rect(center=self.fullscreen_btn.center)  # centre le texte dans le bouton
         screen.blit(text, text_rect)
 

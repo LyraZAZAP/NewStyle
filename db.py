@@ -20,30 +20,31 @@ class Database:  # Classe pour gérer l'initialisation et la connexion à la DB
 
     def _init_db(self):
         # Toujours appliquer le schéma puis le seed (INSERT OR IGNORE rend l'opération idempotente)
-        with sqlite3.connect(self.path) as con:
-            con.executescript(SCHEMA.read_text(encoding='utf-8'))
-            con.executescript(SEED.read_text(encoding='utf-8'))
+        with sqlite3.connect(self.path) as con: # ouvre la connexion temporairement
+            con.executescript(SCHEMA.read_text(encoding='utf-8')) # exécute le script de schéma
+            con.executescript(SEED.read_text(encoding='utf-8')) # exécute le script de seed
 
 
-    def connect(self):
-        con = sqlite3.connect(self.path)
-        con.row_factory = sqlite3.Row
+    def connect(self): # Ouvre et retourne une connexion à la base de données
+        con = sqlite3.connect(self.path) # ouvre la connexion
+        con.row_factory = sqlite3.Row # pour accéder aux colonnes par nom
         self._connection = con  # Mémorise la connexion
         return con
 
-    def close(self):
-        """Ferme la connexion à la base de données."""
-        if self._connection:
+    def close(self): # s'occupe de fermer la connexion
+        """Ferme la connexion à la base de données.""" 
+        if self._connection: # si une connexion existe
             try:
-                self._connection.close()
-                self._connection = None
-            except Exception as e:
+                self._connection.close() # ferme la connexion
+                self._connection = None # réinitialise l'attribut
+            except Exception as e: # log en cas d'erreur
                 print(f"Erreur lors de la fermeture de la connexion DB : {e}")
         
         # Fermer le module SQLite complètement
         try:
-            sqlite3.shutdown()
-        except Exception:
+            sqlite3.shutdown() 
+        except Exception: 
+            # On ignore les erreurs ici pour éviter de faire planter le programme
             pass
 
 
