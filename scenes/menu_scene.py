@@ -89,7 +89,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         screen.blit(self.bg, (0, 0))  # dessiner le fond en premier plan (arrière-plan)
         
         # --- Titre du jeu ---
-        title = self.title_font.render("Regardez mon beau jeu", True, (30, 30, 60))  # rend le texte
+        title = self.title_font.render("Style Dress", True, (30, 30, 60))  # rend le texte
         title_rect = title.get_rect(center=(screen.get_width() // 2, 120))  # centre horizontalement
         
         # Encadré blanc semi-transparent derrière le titre pour améliorer la lisibilité
