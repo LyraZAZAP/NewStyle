@@ -8,6 +8,7 @@ from scenes.menu_scene import MenuScene
 from scenes.dress_scene import DressScene
 from scenes.result_scene import ResultScene
 from scenes.login_scene import LoginScene
+from scenes.register_scene import RegisterScene
 from db import DB
 
 
@@ -30,15 +31,21 @@ class Game:
         self.scene = None
         self.set_scene("login")
 
+        # Infos utilisateur (remplies après connexion)
+        # `current_avatar` contient le chemin vers l'image à afficher
+        self.current_avatar = None
+
     # Méthode unique pour changer de scène
     def set_scene(self, name, *args):
         if name == "login":
             self.scene = LoginScene(self)
 
+        elif name == "register":
+            self.scene = RegisterScene(self)
+
         elif name == "menu":
             # Menu principal après connexion
             self.scene = MenuScene(self)
-
 
         elif name == "dress":
             mannequin, theme = args
@@ -54,12 +61,22 @@ class Game:
     # Optionnel : tu peux garder tes anciens goto_*, mais ils deviennent juste des alias
     def goto_menu(self):
         self.set_scene("menu")
+        
+    def goto_login(self):
+        self.set_scene("login")
+
+    def goto_register(self):
+        self.set_scene("register")
 
     def goto_dress(self, mannequin, theme):
         self.set_scene("dress", mannequin, theme)
 
     def goto_result(self, mannequin, theme, outfit, worn_garments):
         self.set_scene("result", mannequin, theme, outfit, worn_garments)
+
+    def goto_login(self):
+        """Retour à l'écran de connexion/inscription."""
+        self.set_scene("login")
 
     def cleanup(self):
         """Nettoyage à la fermeture."""
@@ -101,6 +118,21 @@ class Game:
 
             self.scene.update(dt)
             self.scene.draw(self.screen)
+
+            # Affiche avatar + pseudo en haut à gauche si connecté
+            if getattr(self, "current_user_id", None) and getattr(self, "current_avatar", None):
+                try:
+                    avatar_img = pg.image.load(self.current_avatar)
+                    avatar_img = avatar_img.convert_alpha() if avatar_img.get_alpha() is not None else avatar_img.convert()
+                    avatar_img = pg.transform.smoothscale(avatar_img, (48, 48))
+                    self.screen.blit(avatar_img, (10, 10))
+                except Exception:
+                    pass
+
+            if getattr(self, "current_user_id", None) and getattr(self, "current_username", None):
+                font = pg.font.SysFont(None, 22)
+                txt = font.render(self.current_username, True, (255, 255, 255))
+                self.screen.blit(txt, (10 + 48 + 8, 20))
             pg.display.flip()
 
         self.cleanup()

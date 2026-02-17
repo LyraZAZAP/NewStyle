@@ -44,6 +44,20 @@ class Database:
             # Exécute le fichier de données initiales pour peupler les tables
             con.executescript(SEED.read_text(encoding='utf-8'))
 
+            # Vérifie que la table users contient les colonnes nécessaires
+            try:
+                cur = con.execute("PRAGMA table_info(users)")
+                cols = [r[1] for r in cur.fetchall()]
+            except sqlite3.OperationalError:
+                cols = []
+
+            # Si une colonne manque, on l'ajoute en utilisant ALTER TABLE (avec valeur par défaut)
+            if 'display_name' not in cols:
+                con.execute("ALTER TABLE users ADD COLUMN display_name TEXT NOT NULL DEFAULT ''")
+            if 'avatar_path' not in cols:
+                con.execute("ALTER TABLE users ADD COLUMN avatar_path TEXT NOT NULL DEFAULT 'assets/avatars/default.png'")
+            con.commit()
+
     def connect(self):
         """Établit une connexion à la base de données.
         
@@ -108,79 +122,63 @@ class Database:
         # Utilise bcrypt pour vérifier que le mot de passe correspond au hash
         return bcrypt.checkpw(password.encode("utf-8"), password_hash)
 
-    def create_user(self, username: str, password: str):
-        """Crée un nouvel utilisateur dans la base de données.
-        
-        Args:
-            username (str): Le nom d'utilisateur
-            password (str): Le mot de passe en clair
-            
-        Returns:
-            tuple: (succès: bool, message: str)
+    def create_user(self, username: str, display_name: str, password: str, avatar_path: str = None):
+        """Crée un nouvel utilisateur. `avatar_path` est optionnel.
+        Si `avatar_path` est None, on utilise un avatar par défaut.
         """
-        # Supprime les espaces au début et à la fin du pseudo
         username = username.strip()
+        display_name = display_name.strip()
 
-        # Valide la longueur du pseudo
         if len(username) < 3:
+            return False, "Identifiant trop court (min 3)."
+        if len(display_name) < 3:
             return False, "Pseudo trop court (min 3)."
-        # Valide la longueur du mot de passe
         if len(password) < 6:
             return False, "Mot de passe trop court (min 6)."
 
-        # Hache le mot de passe de manière sécurisée
         pw_hash = self.hash_password(password)
 
+        # Utiliser un avatar par défaut si aucun n'est fourni
+        if not avatar_path:
+            avatar_path = 'assets/avatars/default.png'
+
         try:
-            # Crée une connexion et insère le nouvel utilisateur
             with sqlite3.connect(self.path) as con:
                 con.execute(
-                    "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-                    (username, pw_hash)
+                    "INSERT INTO users (username, display_name, avatar_path, password_hash) VALUES (?, ?, ?, ?)",
+                    (username, display_name, avatar_path, pw_hash)
                 )
-                # Valide la transaction (enregistre les changements)
                 con.commit()
             return True, "Compte créé !"
         except sqlite3.IntegrityError:
-            # Erreur si le pseudo existe déjà (contrainte unique)
-            return False, "Ce pseudo est déjà utilisé."
+            return False, "Identifiant déjà utilisé."
         except Exception as e:
-            # Capture toute autre erreur de base de données
             return False, f"Erreur DB: {e}"
 
+
     def authenticate(self, username: str, password: str):
-        """Authentifie un utilisateur avec ses identifiants.
-        
-        Args:
-            username (str): Le nom d'utilisateur
-            password (str): Le mot de passe en clair
-            
-        Returns:
-            tuple: (succès: bool, message: str, user_id: int ou None)
-        """
-        # Supprime les espaces au début et à la fin du pseudo
         username = username.strip()
 
-        # Recherche l'utilisateur dans la base de données
         with sqlite3.connect(self.path) as con:
-            # Configure le factory pour accéder aux colonnes par nom
             con.row_factory = sqlite3.Row
-            # Récupère l'ID et le hash du mot de passe de l'utilisateur
             row = con.execute(
-                "SELECT id, password_hash FROM users WHERE username = ?",
+                "SELECT id, display_name, avatar_path, password_hash FROM users WHERE username = ?",
                 (username,)
             ).fetchone()
 
-        # Si l'utilisateur n'existe pas
         if row is None:
             return False, "Utilisateur introuvable.", None
 
-        # Vérifie si le mot de passe est correct
         if self.verify_password(password, row["password_hash"]):
-            return True, "Connexion réussie !", row["id"]
+            # on renvoie tout ce qui est utile au jeu
+            return True, "Connexion réussie !", {
+                "id": row["id"],
+                "display_name": row["display_name"],
+                "avatar_path": row["avatar_path"],
+            }
 
-        # Si le mot de passe est incorrect
         return False, "Mot de passe incorrect.", None
+
 
 
 # ========================================

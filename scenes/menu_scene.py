@@ -51,7 +51,6 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         self.title_font = pg.font.SysFont(None, 56)  # police grande pour le titre
         self.buttons = []  # liste des boutons interactifs du menu
         self.bg_offset = pg.Vector2(0, 0) # pour l'effet de parallaxe du fond d'écran que ça tremble pas
-
         # --- Callback pour le bouton "Nouvelle partie" ---
         def start_random():
             """
@@ -74,6 +73,30 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         # --- Bouton toggle plein écran (coin supérieur droit) ---
         self.fullscreen_btn = pg.Rect(self.game.w - 120, 10, 110, 40)  # rectangle cliquable
         self.font_small = pg.font.SysFont(None, 24)  # petite police pour le texte du bouton
+        
+                # --- Badge utilisateur (avatar + pseudo) ---
+        self.avatar_surf = None
+        self.pseudo_surf = None
+
+        user = getattr(self.game, "current_user", None)
+
+        if user:
+            avatar_path = user.get("avatar_path", "assets/avatars/default.png")
+            pseudo = user.get("display_name", "Invité")
+
+            try:
+                img = pg.image.load(avatar_path)
+                img = img.convert_alpha() if img.get_alpha() is not None else img.convert()
+                self.avatar_surf = pg.transform.smoothscale(img, (64, 64))
+            except Exception as e:
+                print("Erreur chargement avatar:", e)
+                self.avatar_surf = None
+
+            self.pseudo_surf = self.font_small.render(pseudo, True, (30, 30, 60))
+        else:
+            # pas connecté
+            self.pseudo_surf = self.font_small.render("Invité", True, (30, 30, 60))
+
 
         # --- Chargement du fond d'écran ---
         # Charge l'image ou utilise une couleur unie par défaut si l'image n'existe pas
@@ -115,6 +138,23 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         y = (self.game.h - bh) // 2 + dy
 
         screen.blit(self.bg_scaled, (x, y))
+        
+                # --- Affichage avatar + pseudo en haut à gauche ---
+        badge_x, badge_y = 15, 15
+
+        # petit fond semi transparent pour lisibilité
+        bg_w, bg_h = 170, 110
+        bg = pg.Surface((bg_w, bg_h), pg.SRCALPHA)
+        bg.fill((255, 255, 255, 180))
+        screen.blit(bg, (badge_x - 10, badge_y - 10))
+
+        if self.avatar_surf:
+            screen.blit(self.avatar_surf, (badge_x, badge_y))
+
+        if self.pseudo_surf:
+            # pseudo sous l’avatar
+            screen.blit(self.pseudo_surf, (badge_x, badge_y + 70))
+
 
         # --- Titre du jeu ---
         title = self.title_font.render("Style Dress", True, (30, 30, 60))  # rend le texte

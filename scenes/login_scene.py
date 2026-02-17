@@ -10,6 +10,7 @@ class LoginScene(Scene):
 
         self.title_font = pg.font.SysFont(None, 56)
         self.font = pg.font.SysFont(None, 28)
+        self.game.goto_register()
 
         # Champs input (rectangles cliquables)
         self.username_rect = pg.Rect(340, 220, 340, 45)
@@ -24,23 +25,17 @@ class LoginScene(Scene):
         self.buttons = []
 
         def do_login():
-            ok, msg, user_id = DB.authenticate(self.username, self.password)
+            ok, msg, user = DB.authenticate(self.username, self.password)
             self.message = msg
-            if ok:
-                self.game.current_user_id = user_id
-                self.game.current_username = self.username
+            if ok and user:
+                self.game.current_user_id = user.get("id")
+                self.game.current_username = user.get("display_name")
+                self.game.current_avatar = user.get("avatar_path")
                 self.game.goto_menu()
 
         def do_register():
-            ok, msg = DB.create_user(self.username, self.password)
-            self.message = msg
-            # Option: connexion auto après inscription
-            if ok:
-                ok2, msg2, user_id = DB.authenticate(self.username, self.password)
-                if ok2:
-                    self.game.current_user_id = user_id
-                    self.game.current_username = self.username
-                    self.game.goto_menu()
+            # Rediriger vers la scène d'inscription séparée
+            self.game.goto_register()
 
         def go_back():
             self.game.goto_menu()
@@ -117,12 +112,14 @@ class LoginScene(Scene):
 
             if event.key == pg.K_RETURN:
                 # Enter => tentative de connexion
-                ok, msg, user_id = DB.authenticate(self.username, self.password)
+                ok, msg, user = DB.authenticate(self.username, self.password)
                 self.message = msg
-                if ok:
-                    self.game.current_user_id = user_id
-                    self.game.current_username = self.username
+                if ok and user:
+                    self.game.current_user_id = user.get("id")
+                    self.game.current_username = user.get("display_name")
+                    self.game.current_avatar = user.get("avatar_path")
                     self.game.goto_menu()
+                    
                 return
 
             if event.key == pg.K_BACKSPACE:
