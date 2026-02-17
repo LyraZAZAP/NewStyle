@@ -29,7 +29,8 @@ DISC_BTN_PATH = "assets/ui/bouton.png"  # Bouton au centre du disque (pour chang
 # === LISTES DE MUSIQUES ===
 # Chargement des fichiers musicaux depuis le dossier assets/musics/
 MUSIC_TRACKS = [
-    "assets/musics/I DO COKE.mp3",  # Musique de la bande sonore
+    "assets/musics/I DO COKE.mp3",  # Musique 1
+    "assets/musics/I Like It Rough.mp3",  # Musique 2
 ]
 
 # === IMAGE DU TITRE ===
