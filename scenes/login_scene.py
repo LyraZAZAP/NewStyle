@@ -1,0 +1,147 @@
+import pygame as pg
+from scenes.base_scene import Scene
+from ui.widgets import Button
+from db import DB
+
+
+class LoginScene(Scene):
+    def __init__(self, game):
+        super().__init__(game)
+
+        self.title_font = pg.font.SysFont(None, 56)
+        self.font = pg.font.SysFont(None, 28)
+
+        # Champs input (rectangles cliquables)
+        self.username_rect = pg.Rect(340, 220, 340, 45)
+        self.password_rect = pg.Rect(340, 290, 340, 45)
+        self.active_field = "username"  # ou "password"
+
+        self.username = ""
+        self.password = ""
+        self.message = ""
+
+        # Boutons (même style que ton MenuScene)
+        self.buttons = []
+
+        def do_login():
+            ok, msg, user_id = DB.authenticate(self.username, self.password)
+            self.message = msg
+            if ok:
+                self.game.current_user_id = user_id
+                self.game.current_username = self.username
+                self.game.goto_menu()
+
+        def do_register():
+            ok, msg = DB.create_user(self.username, self.password)
+            self.message = msg
+            # Option: connexion auto après inscription
+            if ok:
+                ok2, msg2, user_id = DB.authenticate(self.username, self.password)
+                if ok2:
+                    self.game.current_user_id = user_id
+                    self.game.current_username = self.username
+                    self.game.goto_menu()
+
+        def go_back():
+            self.game.goto_menu()
+
+        self.buttons.append(Button((340, 360, 160, 50), "Connexion", do_login))
+        self.buttons.append(Button((520, 360, 160, 50), "Inscription", do_register))
+        self.buttons.append(Button((340, 430, 340, 45), "Retour menu", go_back))
+
+    # --- Utils affichage ---
+    def _draw_input(self, screen, rect, label, value, active=False, password=False):
+        # fond
+        bg = (255, 255, 255)
+        border = (100, 150, 255) if active else (30, 30, 60)
+        pg.draw.rect(screen, bg, rect, border_radius=8)
+        pg.draw.rect(screen, border, rect, 2, border_radius=8)
+
+        # texte
+        shown = ("*" * len(value)) if (password and value) else value
+        if not shown:
+            shown = label
+            color = (140, 140, 140)
+        else:
+            color = (30, 30, 60)
+
+        text = self.font.render(shown, True, color)
+        screen.blit(text, (rect.x + 12, rect.y + 10))
+
+    def draw(self, screen):
+        screen.fill((40, 40, 60))
+
+        # Titre
+        title = self.title_font.render("Connexion", True, (255, 255, 255))
+        screen.blit(title, title.get_rect(center=(self.game.w // 2, 140)))
+
+        # Champs
+        self._draw_input(
+            screen, self.username_rect, "Pseudo", self.username,
+            active=(self.active_field == "username"), password=False
+        )
+        self._draw_input(
+            screen, self.password_rect, "Mot de passe", self.password,
+            active=(self.active_field == "password"), password=True
+        )
+
+        # Boutons
+        for b in self.buttons:
+            b.draw(screen)
+
+        # Message
+        if self.message:
+            msg = self.font.render(self.message, True, (255, 220, 120))
+            screen.blit(msg, (340, 500))
+
+        # Aide rapide
+        help_txt = self.font.render("TAB pour changer de champ, ENTRÉE pour se connecter", True, (200, 200, 200))
+        screen.blit(help_txt, (340, 540))
+
+    def update(self, dt):
+        pass
+
+    def handle_event(self, event):
+        # Clique : activer champ
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if self.username_rect.collidepoint(event.pos):
+                self.active_field = "username"
+            elif self.password_rect.collidepoint(event.pos):
+                self.active_field = "password"
+
+        # Clavier : écrire
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_TAB:
+                self.active_field = "password" if self.active_field == "username" else "username"
+                return
+
+            if event.key == pg.K_RETURN:
+                # Enter => tentative de connexion
+                ok, msg, user_id = DB.authenticate(self.username, self.password)
+                self.message = msg
+                if ok:
+                    self.game.current_user_id = user_id
+                    self.game.current_username = self.username
+                    self.game.goto_menu()
+                return
+
+            if event.key == pg.K_BACKSPACE:
+                if self.active_field == "username":
+                    self.username = self.username[:-1]
+                else:
+                    self.password = self.password[:-1]
+                return
+
+            # Ajout de caractère (limite + éviter caractères chelous)
+            ch = event.unicode
+            if ch and ch.isprintable():
+                if self.active_field == "username":
+                    if len(self.username) < 24 and ch != " ":
+                        self.username += ch
+                else:
+                    if len(self.password) < 32:
+                        self.password += ch
+
+        # Transmettre aux boutons
+        for b in self.buttons:
+            b.handle(event)

@@ -50,6 +50,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         super().__init__(game)  # conserve la référence au jeu
         self.title_font = pg.font.SysFont(None, 56)  # police grande pour le titre
         self.buttons = []  # liste des boutons interactifs du menu
+        self.bg_offset = pg.Vector2(0, 0) # pour l'effet de parallaxe du fond d'écran que ça tremble pas
 
         # --- Callback pour le bouton "Nouvelle partie" ---
         def start_random():
@@ -76,49 +77,45 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
         # --- Chargement du fond d'écran ---
         # Charge l'image ou utilise une couleur unie par défaut si l'image n'existe pas
-        # On charge un fond un peu plus grand pour permettre le déplacement
+        self.bg = _load_background(MENU_BG_PATH, (self.game.w, self.game.h))
+        
+                # Fond parallax (image + grande que l'écran)
+        self.bg_img = pg.image.load(MENU_BG_PATH)
+        self.bg_img = self.bg_img.convert() if self.bg_img.get_alpha() is None else self.bg_img.convert_alpha()
 
-        #creation de parallaxe pour le fond d'écran du menu
-        self.bg = _load_background(
-            MENU_BG_PATH,
-            (int(self.game.w * 1.1), int(self.game.h * 1.1))
-        )
+        # on la rend un peu plus grande que la fenêtre (ex: +8%)
+        scale = 1.08
+        bw, bh = int(self.game.w * scale), int(self.game.h * scale)
+        self.bg_scaled = pg.transform.smoothscale(self.bg_img, (bw, bh))
 
-        # Offsets pour le parallaxe
-        self.bg_offset_x = 0
-        self.bg_offset_y = 0
-
-        # Intensité du mouvement (plus grand = bouge moins)
-        self.parallax_speed = 40
+        # intensité du mouvement (en pixels max)
+        self.parallax = 25
 
     def draw(self, screen):
         """
         Dessine tous les éléments visuels de l'écran menu.
         
         Args:
-            screen (pygame.Surface): Surface principale du jeu
+            screen surface principale du jeu
         """
-        # --- Fond d'écran ---
-        # --- Calcul du parallaxe ---
-        mouse_x, mouse_y = pg.mouse.get_pos()
+        # --- Fond d'écran effet paralaxe ---
+        mx, my = pg.mouse.get_pos()
 
-        center_x = screen.get_width() / 2
-        center_y = screen.get_height() / 2
+        # centre de la fenêtre (0..w, 0..h) -> (-1..1)
+        nx = (mx / self.game.w) * 2 - 1
+        ny = (my / self.game.h) * 2 - 1
 
-        target_x = (center_x - mouse_x) / self.parallax_speed
-        target_y = (center_y - mouse_y) / self.parallax_speed
+        # Décalage max = self.parallax
+        dx = int(-nx * self.parallax)
+        dy = int(-ny * self.parallax)
 
-        # Mouvement fluide (inertie)
-        self.bg_offset_x += (target_x - self.bg_offset_x) * 0.1
-        self.bg_offset_y += (target_y - self.bg_offset_y) * 0.1
+        # on centre l'image et on applique le décalage
+        bw, bh = self.bg_scaled.get_size()
+        x = (self.game.w - bw) // 2 + dx
+        y = (self.game.h - bh) // 2 + dy
 
-        # Position centrée + offset
-        bg_x = -(self.bg.get_width() - screen.get_width()) // 2 + self.bg_offset_x
-        bg_y = -(self.bg.get_height() - screen.get_height()) // 2 + self.bg_offset_y
+        screen.blit(self.bg_scaled, (x, y))
 
-        screen.blit(self.bg, (bg_x, bg_y))
-
-        
         # --- Titre du jeu ---
         title = self.title_font.render("Style Dress", True, (30, 30, 60))  # rend le texte
         title_rect = title.get_rect(center=(screen.get_width() // 2, 120))  # centre horizontalement
@@ -145,6 +142,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         text = self.font_small.render(label, True, (255, 255, 255))  # texte de couleur ( rose-violet clair)
         text_rect = text.get_rect(center=self.fullscreen_btn.center)  # centre le texte dans le bouton
         screen.blit(text, text_rect)
+        
 
     def handle_event(self, event):
         """
