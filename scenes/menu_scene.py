@@ -149,10 +149,10 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
             self.game,
             DISC_IMG_PATH,
             DISC_BTN_PATH,
-            size=500,            # taille du disque en pixels
-            anchor="topright",   # coin haut-droit
-            margin=16,           # marge depuis le bord
-            speed_deg=70         # vitesse de rotation
+            size=600,            # taille du disque en pixels
+            anchor="downright",   # positionnement dans le coin inférieur droit
+            margin=-175,           # marge depuis le bord
+            speed_deg=60         # vitesse de rotation
         )
 
         
@@ -186,10 +186,10 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
         
                 # --- Affichage avatar + pseudo en haut à gauche ---
-        badge_x, badge_y = 15, 15
+        badge_x, badge_y = 20, 20
 
         # petit fond semi transparent pour lisibilité
-        bg_w, bg_h = 170, 110
+        bg_w, bg_h = 170, 110 # taille du badge (avatar + pseudo)
         bg = pg.Surface((bg_w, bg_h), pg.SRCALPHA)
         bg.fill((255, 255, 255, 180))
         screen.blit(bg, (badge_x - 10, badge_y - 10))
@@ -206,7 +206,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         # Affiche l'image du titre à la place du texte "Style Dress"
         if self.title_img is not None:
             # Centre l'image du titre horizontalement
-            title_rect = self.title_img.get_rect(center=(screen.get_width() // 2, 120))
+            title_rect = self.title_img.get_rect(center=(screen.get_width() // 2, 150)) 
             # Affiche l'image du titre
             screen.blit(self.title_img, title_rect)
         else:
@@ -226,7 +226,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
         # --- Bouton plein écran ---
         # Couleur change au survol (hover effect)
-        color = (100, 150, 255) if self.fullscreen_btn.collidepoint(pg.mouse.get_pos()) else (249,216,251)
+        color = (100, 150, 255) if self.fullscreen_btn.collidepoint(pg.mouse.get_pos()) else (249,216,251) 
         pg.draw.rect(screen, color, self.fullscreen_btn, border_radius=5)  # fond du bouton
         pg.draw.rect(screen, (255, 255, 255), self.fullscreen_btn, 2, border_radius=5)  # bordure blanche
 

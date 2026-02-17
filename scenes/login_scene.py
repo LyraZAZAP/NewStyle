@@ -55,25 +55,25 @@ class LoginScene(Scene):
         def go_back():
             self.game.goto_menu()
 
-        self.buttons.append(Button((340, 360, 160, 50), "Connexion", do_login))
+        self.buttons.append(Button((340, 360, 160, 50), "Connexion", do_login)) 
         self.buttons.append(Button((520, 360, 160, 50), "Inscription", do_register))
         self.buttons.append(Button((340, 430, 340, 45), "Retour menu", go_back))
 
     # --- Utils affichage ---
     def _draw_input(self, screen, rect, label, value, active=False, password=False):
         # fond
-        bg = (255, 255, 255)
-        border = (100, 150, 255) if active else (30, 30, 60)
-        pg.draw.rect(screen, bg, rect, border_radius=8)
-        pg.draw.rect(screen, border, rect, 2, border_radius=8)
+        bg = (255, 255, 255) 
+        border = (100, 150, 255) if active else (30, 30, 60) 
+        pg.draw.rect(screen, bg, rect, border_radius=800)
+        pg.draw.rect(screen, border, rect, 2, border_radius=800)
 
         # texte
         shown = ("*" * len(value)) if (password and value) else value
         if not shown:
             shown = label
-            color = (140, 140, 140)
+            color = (140, 140, 140) 
         else:
-            color = (30, 30, 60)
+            color = (30, 30, 60) 
 
         text = self.font.render(shown, True, color)
         screen.blit(text, (rect.x + 12, rect.y + 10))
