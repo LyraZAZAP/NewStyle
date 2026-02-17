@@ -157,17 +157,17 @@ class Game:
                     avatar_img = pg.image.load(self.current_avatar)
                     avatar_img = avatar_img.convert_alpha() if avatar_img.get_alpha() is not None else avatar_img.convert()
                     avatar_img = pg.transform.smoothscale(avatar_img, (175, 175))  # Redimensionne à 175x175
-                    margin = 16
+                    margin = 16 # Marge depuis le bord de l'écran
                     aw, ah = avatar_img.get_width(), avatar_img.get_height()
-                    ax = self.screen.get_width() - margin - aw
+                    ax = self.screen.get_width() - margin - aw # Positionne à droite avec une marge
                     ay = self.screen.get_height() - margin - ah
-                    self.screen.blit(avatar_img, (ax, ay))
+                    self.screen.blit(avatar_img, (ax, ay)) # Affiche l'avatar en bas à droite
 
                     # Affiche le pseudo centré au-dessus de l'avatar si présent
                     if getattr(self, "current_username", None):
-                        font = pg.font.SysFont(None, 22)
-                        txt = font.render(self.current_username, True, (255, 255, 255))
-                        pw, ph = txt.get_width(), txt.get_height()
+                        font = pg.font.SysFont(None, 24) # Police pour le pseudo des utilisateurs
+                        txt = font.render(self.current_username, True, (121, 6, 70)) # Texte du pseudo 
+                        pw, ph = txt.get_width(), txt.get_height() # Dimensions du texte
                         px = ax + (aw - pw) // 2
                         py = ay - 6 - ph
                         self.screen.blit(txt, (px, py))
