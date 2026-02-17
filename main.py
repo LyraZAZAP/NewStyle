@@ -36,12 +36,8 @@ class Game:
             self.scene = LoginScene(self)
 
         elif name == "menu":
-            # Infos utilisateur (remplies après connexion)
-            self.current_user_id = None
-            self.current_username = None
-
-            # Scène initiale : connexion
-            self.scene = LoginScene(self)
+            # Menu principal après connexion
+            self.scene = MenuScene(self)
 
 
         elif name == "dress":
