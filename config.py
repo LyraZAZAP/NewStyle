@@ -31,6 +31,8 @@ DISC_BTN_PATH = "assets/ui/bouton.png"  # Bouton au centre du disque (pour chang
 MUSIC_TRACKS = [
     "assets/musics/I DO COKE.mp3",  # Musique 1
     "assets/musics/I Like It Rough.mp3",  # Musique 2
+    "assets/musics/404 (New Era).mp3",  # Musique 3
+    "assets/musics/Tila Tsoli - Bimbo Doll (Lyrics).mp3"  # Musique 4
 ]
 
 # === IMAGE DU TITRE ===

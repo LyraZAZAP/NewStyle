@@ -151,20 +151,28 @@ class Game:
             self.scene.update(dt)
             self.scene.draw(self.screen)
 
-            # Affiche avatar + pseudo en haut à gauche si connecté
+            # Affiche avatar + pseudo en bas à droite si connecté
             if getattr(self, "current_user_id", None) and getattr(self, "current_avatar", None):
                 try:
                     avatar_img = pg.image.load(self.current_avatar)
                     avatar_img = avatar_img.convert_alpha() if avatar_img.get_alpha() is not None else avatar_img.convert()
-                    avatar_img = pg.transform.smoothscale(avatar_img, (48, 48))
-                    self.screen.blit(avatar_img, (10, 10))
+                    avatar_img = pg.transform.smoothscale(avatar_img, (175, 175))  # Redimensionne à 175x175
+                    margin = 16
+                    aw, ah = avatar_img.get_width(), avatar_img.get_height()
+                    ax = self.screen.get_width() - margin - aw
+                    ay = self.screen.get_height() - margin - ah
+                    self.screen.blit(avatar_img, (ax, ay))
+
+                    # Affiche le pseudo centré au-dessus de l'avatar si présent
+                    if getattr(self, "current_username", None):
+                        font = pg.font.SysFont(None, 22)
+                        txt = font.render(self.current_username, True, (255, 255, 255))
+                        pw, ph = txt.get_width(), txt.get_height()
+                        px = ax + (aw - pw) // 2
+                        py = ay - 6 - ph
+                        self.screen.blit(txt, (px, py))
                 except Exception:
                     pass
-
-            if getattr(self, "current_user_id", None) and getattr(self, "current_username", None):
-                font = pg.font.SysFont(None, 22)
-                txt = font.render(self.current_username, True, (255, 255, 255))
-                self.screen.blit(txt, (10 + 48 + 8, 20))
             pg.display.flip()
 
         self.cleanup()

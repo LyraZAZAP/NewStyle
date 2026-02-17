@@ -11,7 +11,7 @@ import pygame as pg  # Pygame pour le rendu graphique
 class MusicDiscWidget:
     """Widget affichant un disque vinyl tournant avec un bouton au centre."""
     
-    def __init__(self, game, disc_path, button_path, size=220, anchor="topright", margin=16, speed_deg=60):
+    def __init__(self, game, disc_path, button_path, size=220, anchor="topleft", margin=16, speed_deg=60):
         """Crée un widget disque musical."""
         self.game = game  # Référence au jeu
         self.size = size  # Taille du disque en pixels
