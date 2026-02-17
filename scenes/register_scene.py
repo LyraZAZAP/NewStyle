@@ -12,6 +12,14 @@ class RegisterScene(Scene):
         self.title_font = pg.font.SysFont(None, 56)
         self.font = pg.font.SysFont(None, 28)
 
+        # charge le background spécifique à l'inscription (assets/backgrounds/register.png)
+        try:
+            self.bg = pg.image.load("assets/backgrounds/register.png")
+            self.bg = self.bg.convert_alpha() if self.bg.get_alpha() is not None else self.bg.convert()
+            self.bg = pg.transform.smoothscale(self.bg, (self.game.w, self.game.h))
+        except Exception:
+            self.bg = None
+
         # Champs
         self.login_rect = pg.Rect(340, 210, 340, 45)
         self.pseudo_rect = pg.Rect(340, 270, 340, 45)
@@ -99,7 +107,11 @@ class RegisterScene(Scene):
         screen.blit(text, (rect.x + 12, rect.y + 10))
 
     def draw(self, screen):
-        screen.fill((40, 40, 60))
+        # affiche le background si disponible sinon fond uni
+        if self.bg:
+            screen.blit(self.bg, (0, 0))
+        else:
+            screen.fill((40, 40, 60))
 
         title = self.title_font.render("Inscription", True, (255, 255, 255))
         screen.blit(title, title.get_rect(center=(self.game.w // 2, 120)))

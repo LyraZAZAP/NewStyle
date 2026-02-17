@@ -7,10 +7,16 @@ from db import DB
 class LoginScene(Scene):
     def __init__(self, game):
         super().__init__(game)
-
         self.title_font = pg.font.SysFont(None, 56)
         self.font = pg.font.SysFont(None, 28)
-        self.game.goto_register()
+        # charge le background spécifique au login (assets/backgrounds/login.png)
+        try:
+            self.bg = pg.image.load("assets/backgrounds/login.png")
+            # gérer transparence si besoin
+            self.bg = self.bg.convert_alpha() if self.bg.get_alpha() is not None else self.bg.convert()
+            self.bg = pg.transform.smoothscale(self.bg, (self.game.w, self.game.h))
+        except Exception:
+            self.bg = None
 
         # Champs input (rectangles cliquables)
         self.username_rect = pg.Rect(340, 220, 340, 45)
@@ -64,7 +70,11 @@ class LoginScene(Scene):
         screen.blit(text, (rect.x + 12, rect.y + 10))
 
     def draw(self, screen):
-        screen.fill((40, 40, 60))
+        # affiche le background si disponible sinon fond uni
+        if self.bg:
+            screen.blit(self.bg, (0, 0))
+        else:
+            screen.fill((40, 40, 60))
 
         # Titre
         title = self.title_font.render("Connexion", True, (255, 255, 255))
