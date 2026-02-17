@@ -23,12 +23,15 @@ MENU_BG_PATH = "assets/backgrounds/menu_bg.png"  # Fond pour l'écran menu princ
 RESULT_BG_PATH = "assets/backgrounds/stage_bg.png"  # Fond pour l'écran résultat
 
 # === DISQUE MUSICAL (WIDGET UI) ===
-DISC_IMG_PATH = "assets/ui/disc.png"  # Image du disque vinyl qui tourne
-DISC_BTN_PATH = "assets/ui/disc_button.png"  # Bouton au centre du disque
+DISC_IMG_PATH = "assets/ui/disque.png"  # Image du disque vinyl qui tourne
+DISC_BTN_PATH = "assets/ui/bouton.png"  # Bouton au centre du disque (pour changer de musique)
 
 # === LISTES DE MUSIQUES ===
+# Chargement des fichiers musicaux depuis le dossier assets/musics/
 MUSIC_TRACKS = [
-    "assets/music/track1.ogg",  # Piste 1 de la bande sonore
-    "assets/music/track2.ogg",  # Piste 2 de la bande sonore
-    "assets/music/track3.ogg",  # Piste 3 de la bande sonore
+    "assets/musics/I DO COKE.mp3",  # Musique de la bande sonore
 ]
+
+# === IMAGE DU TITRE ===
+# Image affichée en haut du menu au lieu du texte
+TITLE_IMG_PATH = "assets/titles/title_menu.png"

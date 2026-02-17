@@ -32,8 +32,9 @@ from config import MUSIC_TRACKS  # Liste des fichiers musicaux
 class Game:
     def __init__(self):
         pg.init()
-        self.audio = AudioManager(MUSIC_TRACKS, volume=0.6)
-        self.audio.play()  # démarre la 1ère musique
+        # Initialise le gestionnaire audio (mais ne le lance pas encore)
+        self.audio = AudioManager(MUSIC_TRACKS, volume=0.2)
+        # Ne pas lancer la musique ici - elle sera lancée seulement au menu
 
         self.w, self.h = WINDOW_WIDTH, WINDOW_HEIGHT
         self.screen = pg.display.set_mode((self.w, self.h))
@@ -57,6 +58,16 @@ class Game:
 
     # Méthode unique pour changer de scène
     def set_scene(self, name, *args):
+        # Arrête la musique si on va vers connexion/inscription
+        if name in ["login", "register"]:
+            pg.mixer.music.stop()  # Arrête la musique
+        
+        # Lance la musique si on va vers menu ou habillage
+        if name in ["menu", "dress"]:
+            if not self.audio.is_playing():  # Seulement si elle ne joue pas déjà
+                self.audio.play()
+        
+        # Navigue vers la bonne scène
         if name == "login":
             self.scene = LoginScene(self)
 

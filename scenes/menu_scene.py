@@ -13,7 +13,7 @@ from repositories import MannequinRepo  # Récupère les mannequins de la BD
 from models import Mannequin  # Modèle de données mannequin
 from config import MENU_BG_PATH  # Chemin du fond d'écran
 from ui.music_disc import MusicDiscWidget  # Widget disque musical tournant
-from config import DISC_IMG_PATH, DISC_BTN_PATH  # Images du disque
+from config import DISC_IMG_PATH, DISC_BTN_PATH, TITLE_IMG_PATH  # Images du disque et titre
 
 # === THÈMES DISPONIBLES ===
 # Liste des (code_interne, libellé_affiché) pour le jeu
@@ -57,7 +57,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
             game (Game): Référence à l'objet jeu principal
         """
         super().__init__(game)  # conserve la référence au jeu
-        self.title_font = pg.font.SysFont(None, 56)  # police grande pour le titre
+        self.title_font = pg.font.SysFont(None, 70)  # police grande pour le titre
         self.buttons = []  # liste des boutons interactifs du menu
         self.bg_offset = pg.Vector2(0, 0) # pour l'effet de parallaxe du fond d'écran que ça tremble pas
         # --- Callback pour le bouton "Nouvelle partie" ---
@@ -81,7 +81,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
         # --- Bouton toggle plein écran (coin supérieur droit) ---
         self.fullscreen_btn = pg.Rect(self.game.w - 120, 10, 110, 40)  # rectangle cliquable
-        self.font_small = pg.font.SysFont(None, 24)  # petite police pour le texte du bouton
+        self.font_small = pg.font.SysFont(None, 30)  # petite police pour le texte du bouton
         
                 # --- Badge utilisateur (avatar + pseudo) ---
         self.avatar_surf = None
@@ -122,14 +122,37 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
         # intensité du mouvement (en pixels max)
         self.parallax = 25
+        
+        # === CHARGEMENT DE L'IMAGE DU TITRE ===
+        # Charge et redimensionne l'image du titre depuis assets/titles/
+        try:
+            # Charge l'image du titre
+            title_img = pg.image.load(TITLE_IMG_PATH)
+            # Optimise le rendu avec convert_alpha (avec transparence si besoin)
+            title_img = title_img.convert_alpha() if title_img.get_alpha() is not None else title_img.convert()
+            # Redimensionne le titre pour l'adapter au centre de l'écran
+            # Largeur max : 600 pixels, hauteur : proportionnelle
+            title_width = min(600, self.game.w - 40)  # Laisse 20px de marge de chaque côté
+            # Calcule la hauteur proportionnelle pour garder les proportions
+            img_ratio = title_img.get_height() / title_img.get_width()
+            title_height = int(title_width * img_ratio)
+            # Redimensionne avec qualité
+            self.title_img = pg.transform.smoothscale(title_img, (title_width, title_height))
+        except Exception as e:
+            # Si le chargement échoue, crée un placeholder gris
+            print(f"Erreur chargement titre image : {e}")
+            self.title_img = None
+        
+        # Disque musical qui tourne en haut-droite
+        # Le bouton au centre permet de passer à la musique suivante
         self.music_disc = MusicDiscWidget(
             self.game,
             DISC_IMG_PATH,
             DISC_BTN_PATH,
-            size=220,           # taille du disque
-            anchor="topright",  # coin
-            margin=16,
-            speed_deg=70        # vitesse rotation
+            size=500,            # taille du disque en pixels
+            anchor="topright",   # coin haut-droit
+            margin=16,           # marge depuis le bord
+            speed_deg=70         # vitesse de rotation
         )
 
         
@@ -180,15 +203,22 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
 
         # --- Titre du jeu ---
-        title = self.title_font.render("Style Dress", True, (30, 30, 60))  # rend le texte
-        title_rect = title.get_rect(center=(screen.get_width() // 2, 120))  # centre horizontalement
-        
-        # Encadré blanc semi-transparent derrière le titre pour améliorer la lisibilité
-        bg_rect = title_rect.inflate(40, 20)  # ajoute 20px de padding horizontal, 10px vertical
-        bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)  # surface avec alpha
-        bg_surf.fill((255, 255, 255, 200))  # blanc avec transparence (alpha=200/255)
-        screen.blit(bg_surf, bg_rect.topleft)  # dessiner l'encadré
-        screen.blit(title, title_rect)  # dessiner le titre par-dessus
+        # Affiche l'image du titre à la place du texte "Style Dress"
+        if self.title_img is not None:
+            # Centre l'image du titre horizontalement
+            title_rect = self.title_img.get_rect(center=(screen.get_width() // 2, 120))
+            # Affiche l'image du titre
+            screen.blit(self.title_img, title_rect)
+        else:
+            # Fallback : affiche du texte si l'image n'a pas pu être chargée
+            title = self.title_font.render("Style Dress", True, (30, 30, 60))
+            title_rect = title.get_rect(center=(screen.get_width() // 2, 120))
+            # Encadré blanc semi-transparent pour lisibilité
+            bg_rect = title_rect.inflate(40, 20)
+            bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)
+            bg_surf.fill((255, 255, 255, 200))
+            screen.blit(bg_surf, bg_rect.topleft)
+            screen.blit(title, title_rect)
 
         # --- Boutons du menu ---
         for b in self.buttons:  # dessine tous les boutons (ici: "Nouvelle partie")
