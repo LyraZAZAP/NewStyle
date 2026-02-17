@@ -29,6 +29,18 @@ INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, pric
 VALUES ('top violet', (SELECT id FROM category WHERE name='top'), 'assets/clothes/tops/top4.png', 'casual', 20);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('top jaune rose', (SELECT id FROM category WHERE name='top'), 'assets/clothes/tops/top6.png', 'chic', 20);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('top menth', (SELECT id FROM category WHERE name='top'), 'assets/clothes/tops/top7.png', 'soiree', 20);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('top rose epaule', (SELECT id FROM category WHERE name='top'), 'assets/clothes/tops/top8.png', 'casual', 20);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('top meme', (SELECT id FROM category WHERE name='top'), 'assets/clothes/tops/top9.png', 'casual', 20);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('top vert classe', (SELECT id FROM category WHERE name='top'), 'assets/clothes/tops/top5.png', 'chic', 20);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
@@ -47,6 +59,15 @@ INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, pric
 VALUES ('pantalon vert', (SELECT id FROM category WHERE name='bottom'), 'assets/clothes/bottoms/bottom5.png', 'casual', 15);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('pantalon jeans blue', (SELECT id FROM category WHERE name='bottom'), 'assets/clothes/bottoms/bottom6.png', 'casual', 15);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('pantalon vert rose punk', (SELECT id FROM category WHERE name='bottom'), 'assets/clothes/bottoms/bottom7.png', 'colorful', 15);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('pantalon vert bonbon', (SELECT id FROM category WHERE name='bottom'), 'assets/clothes/bottoms/bottom8.png', 'soiree', 15);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('calm', (SELECT id FROM category WHERE name='face'), 'assets/clothes/faces/face1.png', 'casual', 10);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
@@ -62,6 +83,9 @@ INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, pric
 VALUES ('happy', (SELECT id FROM category WHERE name='face'), 'assets/clothes/faces/face5.png', 'colorful', 10);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('sunglasse', (SELECT id FROM category WHERE name='face'), 'assets/clothes/faces/face6.png', 'soiree', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('bob', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair1.png', 'chic', 25);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
@@ -75,6 +99,12 @@ VALUES ('long', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hai
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('violet', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair5.png', 'colorful', 25);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('rouge', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair6.png', 'soiree', 25);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('violet lisse', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair7.png', 'chic', 25);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('goth', (SELECT id FROM category WHERE name='accessory'), 'assets/clothes/accessories/accessoire1.png', 'soiree', 5);

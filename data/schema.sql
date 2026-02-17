@@ -41,3 +41,12 @@ CREATE TABLE IF NOT EXISTS run_result (-- Crée la table "run_result" pour stock
   FOREIGN KEY(mannequin_id) REFERENCES mannequin(id),-- Déclare "mannequin_id" comme clé étrangère vers "mannequin(id)"
   FOREIGN KEY(theme_id) REFERENCES theme(id)-- Déclare "theme_id" comme clé étrangère vers "theme(id)"
 );-- Fin de la définition de la table "run_result"
+
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    display_name TEXT NOT NULL,
+    avatar_path TEXT NOT NULL DEFAULT 'assets/avatars/default.png',
+    password_hash BLOB NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

@@ -1,13 +1,22 @@
-import random  # utilitaire pour choisir aléatoirement
-import os  # pour vérifier l'existence des fichiers
-import pygame as pg  # pygame importé sous le nom pg
-from scenes.base_scene import Scene  # classe de base pour les scènes
-from ui.widgets import Button  # widget bouton réutilisable
-from repositories import MannequinRepo  # repo pour récupérer les mannequins
-from models import Mannequin  # modèle de données mannequin
-from config import MENU_BG_PATH  # chemin du fond d'écran menu
+# ========================================
+# SCÈNE MENU PRINCIPAL
+# Affiche après la connexion avec avatar et bouton "Nouvelle partie"
+# ========================================
 
-# Liste des thèmes disponibles : chaque tuple contient (code interne, libellé affiché)
+# === IMPORTS ===
+import random  # Pour choisir thème et mannequin aléatoires
+import os  # Pour vérifier l'existence des fichiers
+import pygame as pg  # Pygame pour l'affichage et les événements
+from scenes.base_scene import Scene  # Classe de base pour les scènes
+from ui.widgets import Button  # Widget bouton réutilisable
+from repositories import MannequinRepo  # Récupère les mannequins de la BD
+from models import Mannequin  # Modèle de données mannequin
+from config import MENU_BG_PATH  # Chemin du fond d'écran
+from ui.music_disc import MusicDiscWidget  # Widget disque musical tournant
+from config import DISC_IMG_PATH, DISC_BTN_PATH, TITLE_IMG_PATH  # Images du disque et titre
+
+# === THÈMES DISPONIBLES ===
+# Liste des (code_interne, libellé_affiché) pour le jeu
 THEMES = [
     ("casual", "Casual"),      # Style décontracté
     ("soiree", "Soirée"),      # Tenue élégante
@@ -48,9 +57,9 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
             game (Game): Référence à l'objet jeu principal
         """
         super().__init__(game)  # conserve la référence au jeu
-        self.title_font = pg.font.SysFont(None, 56)  # police grande pour le titre
+        self.title_font = pg.font.SysFont(None, 70)  # police grande pour le titre
         self.buttons = []  # liste des boutons interactifs du menu
-
+        self.bg_offset = pg.Vector2(0, 0) # pour l'effet de parallaxe du fond d'écran que ça tremble pas
         # --- Callback pour le bouton "Nouvelle partie" ---
         def start_random():
             """
@@ -72,63 +81,144 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
         # --- Bouton toggle plein écran (coin supérieur droit) ---
         self.fullscreen_btn = pg.Rect(self.game.w - 120, 10, 110, 40)  # rectangle cliquable
-        self.font_small = pg.font.SysFont(None, 24)  # petite police pour le texte du bouton
+        self.font_small = pg.font.SysFont(None, 30)  # petite police pour le texte du bouton
+        
+                # --- Badge utilisateur (avatar + pseudo) ---
+        self.avatar_surf = None
+        self.pseudo_surf = None
+
+        user = getattr(self.game, "current_user", None)
+
+        if user:
+            avatar_path = user.get("avatar_path", "assets/avatars/default.png")
+            pseudo = user.get("display_name", "Invité")
+
+            try:
+                img = pg.image.load(avatar_path)
+                img = img.convert_alpha() if img.get_alpha() is not None else img.convert()
+                self.avatar_surf = pg.transform.smoothscale(img, (64, 64))
+            except Exception as e:
+                print("Erreur chargement avatar:", e)
+                self.avatar_surf = None
+
+            self.pseudo_surf = self.font_small.render(pseudo, True, (30, 30, 60))
+        else:
+            # pas connecté
+            self.pseudo_surf = self.font_small.render("Invité", True, (30, 30, 60))
+
 
         # --- Chargement du fond d'écran ---
         # Charge l'image ou utilise une couleur unie par défaut si l'image n'existe pas
-        # On charge un fond un peu plus grand pour permettre le déplacement
+        self.bg = _load_background(MENU_BG_PATH, (self.game.w, self.game.h))
+        
+                # Fond parallax (image + grande que l'écran)
+        self.bg_img = pg.image.load(MENU_BG_PATH)
+        self.bg_img = self.bg_img.convert() if self.bg_img.get_alpha() is None else self.bg_img.convert_alpha()
 
-        #creation de parallaxe pour le fond d'écran du menu
-        self.bg = _load_background(
-            MENU_BG_PATH,
-            (int(self.game.w * 1.1), int(self.game.h * 1.1))
+        # on la rend un peu plus grande que la fenêtre (ex: +8%)
+        scale = 1.08
+        bw, bh = int(self.game.w * scale), int(self.game.h * scale)
+        self.bg_scaled = pg.transform.smoothscale(self.bg_img, (bw, bh))
+
+        # intensité du mouvement (en pixels max)
+        self.parallax = 25
+        
+        # === CHARGEMENT DE L'IMAGE DU TITRE ===
+        # Charge et redimensionne l'image du titre depuis assets/titles/
+        try:
+            # Charge l'image du titre
+            title_img = pg.image.load(TITLE_IMG_PATH)
+            # Optimise le rendu avec convert_alpha (avec transparence si besoin)
+            title_img = title_img.convert_alpha() if title_img.get_alpha() is not None else title_img.convert()
+            # Redimensionne le titre pour l'adapter au centre de l'écran
+            # Largeur max : 600 pixels, hauteur : proportionnelle
+            title_width = min(600, self.game.w - 40)  # Laisse 20px de marge de chaque côté
+            # Calcule la hauteur proportionnelle pour garder les proportions
+            img_ratio = title_img.get_height() / title_img.get_width()
+            title_height = int(title_width * img_ratio)
+            # Redimensionne avec qualité
+            self.title_img = pg.transform.smoothscale(title_img, (title_width, title_height))
+        except Exception as e:
+            # Si le chargement échoue, crée un placeholder gris
+            print(f"Erreur chargement titre image : {e}")
+            self.title_img = None
+        
+        # Disque musical qui tourne en haut-droite
+        # Le bouton au centre permet de passer à la musique suivante
+        self.music_disc = MusicDiscWidget(
+            self.game,
+            DISC_IMG_PATH,
+            DISC_BTN_PATH,
+            size=500,            # taille du disque en pixels
+            anchor="topright",   # coin haut-droit
+            margin=16,           # marge depuis le bord
+            speed_deg=70         # vitesse de rotation
         )
 
-        # Offsets pour le parallaxe
-        self.bg_offset_x = 0
-        self.bg_offset_y = 0
-
-        # Intensité du mouvement (plus grand = bouge moins)
-        self.parallax_speed = 40
+        
 
     def draw(self, screen):
         """
         Dessine tous les éléments visuels de l'écran menu.
         
         Args:
-            screen (pygame.Surface): Surface principale du jeu
+            screen surface principale du jeu
         """
-        # --- Fond d'écran ---
-        # --- Calcul du parallaxe ---
-        mouse_x, mouse_y = pg.mouse.get_pos()
+        # --- Fond d'écran effet paralaxe ---
+        mx, my = pg.mouse.get_pos()
 
-        center_x = screen.get_width() / 2
-        center_y = screen.get_height() / 2
+        # centre de la fenêtre (0..w, 0..h) -> (-1..1)
+        nx = (mx / self.game.w) * 2 - 1
+        ny = (my / self.game.h) * 2 - 1
 
-        target_x = (center_x - mouse_x) / self.parallax_speed
-        target_y = (center_y - mouse_y) / self.parallax_speed
+        # Décalage max = self.parallax
+        dx = int(-nx * self.parallax)
+        dy = int(-ny * self.parallax)
 
-        # Mouvement fluide (inertie)
-        self.bg_offset_x += (target_x - self.bg_offset_x) * 0.1
-        self.bg_offset_y += (target_y - self.bg_offset_y) * 0.1
+        # on centre l'image et on applique le décalage
+        bw, bh = self.bg_scaled.get_size()
+        x = (self.game.w - bw) // 2 + dx
+        y = (self.game.h - bh) // 2 + dy
 
-        # Position centrée + offset
-        bg_x = -(self.bg.get_width() - screen.get_width()) // 2 + self.bg_offset_x
-        bg_y = -(self.bg.get_height() - screen.get_height()) // 2 + self.bg_offset_y
-
-        screen.blit(self.bg, (bg_x, bg_y))
+        screen.blit(self.bg_scaled, (x, y))
+        
+        self.music_disc.draw(screen)
 
         
+                # --- Affichage avatar + pseudo en haut à gauche ---
+        badge_x, badge_y = 15, 15
+
+        # petit fond semi transparent pour lisibilité
+        bg_w, bg_h = 170, 110
+        bg = pg.Surface((bg_w, bg_h), pg.SRCALPHA)
+        bg.fill((255, 255, 255, 180))
+        screen.blit(bg, (badge_x - 10, badge_y - 10))
+
+        if self.avatar_surf:
+            screen.blit(self.avatar_surf, (badge_x, badge_y))
+
+        if self.pseudo_surf:
+            # pseudo sous l’avatar
+            screen.blit(self.pseudo_surf, (badge_x, badge_y + 70))
+
+
         # --- Titre du jeu ---
-        title = self.title_font.render("Style Dress", True, (30, 30, 60))  # rend le texte
-        title_rect = title.get_rect(center=(screen.get_width() // 2, 120))  # centre horizontalement
-        
-        # Encadré blanc semi-transparent derrière le titre pour améliorer la lisibilité
-        bg_rect = title_rect.inflate(40, 20)  # ajoute 20px de padding horizontal, 10px vertical
-        bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)  # surface avec alpha
-        bg_surf.fill((255, 255, 255, 200))  # blanc avec transparence (alpha=200/255)
-        screen.blit(bg_surf, bg_rect.topleft)  # dessiner l'encadré
-        screen.blit(title, title_rect)  # dessiner le titre par-dessus
+        # Affiche l'image du titre à la place du texte "Style Dress"
+        if self.title_img is not None:
+            # Centre l'image du titre horizontalement
+            title_rect = self.title_img.get_rect(center=(screen.get_width() // 2, 120))
+            # Affiche l'image du titre
+            screen.blit(self.title_img, title_rect)
+        else:
+            # Fallback : affiche du texte si l'image n'a pas pu être chargée
+            title = self.title_font.render("Style Dress", True, (30, 30, 60))
+            title_rect = title.get_rect(center=(screen.get_width() // 2, 120))
+            # Encadré blanc semi-transparent pour lisibilité
+            bg_rect = title_rect.inflate(40, 20)
+            bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)
+            bg_surf.fill((255, 255, 255, 200))
+            screen.blit(bg_surf, bg_rect.topleft)
+            screen.blit(title, title_rect)
 
         # --- Boutons du menu ---
         for b in self.buttons:  # dessine tous les boutons (ici: "Nouvelle partie")
@@ -145,6 +235,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         text = self.font_small.render(label, True, (255, 255, 255))  # texte de couleur ( rose-violet clair)
         text_rect = text.get_rect(center=self.fullscreen_btn.center)  # centre le texte dans le bouton
         screen.blit(text, text_rect)
+        
 
     def handle_event(self, event):
         """
@@ -154,6 +245,9 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
             event (pygame.Event): Événement pygame à traiter
         """
         # --- Clic sur le bouton plein écran ---
+        if self.music_disc.handle_event(event):
+            return
+
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:  # clic gauche
             if self.fullscreen_btn.collidepoint(event.pos):  # si clic sur le bouton fullscreen
                 self.game.toggle_fullscreen()  # bascule fenêtre <-> plein écran
@@ -162,3 +256,6 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         # --- Transmet l'événement aux autres boutons du menu ---
         for b in self.buttons:  # parcourt tous les boutons (ex: "Nouvelle partie")
             b.handle(event)  # chaque bouton gère ses propres clics
+            
+    def update(self, dt):
+        self.music_disc.update(dt)
