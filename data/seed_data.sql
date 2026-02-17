@@ -86,6 +86,9 @@ INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, pric
 VALUES ('sunglasse', (SELECT id FROM category WHERE name='face'), 'assets/clothes/faces/face6.png', 'soiree', 10);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('red round cheeks', (SELECT id FROM category WHERE name='face'), 'assets/clothes/faces/face7.png', 'colorful', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('bob', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair1.png', 'chic', 25);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
@@ -107,6 +110,9 @@ INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, pric
 VALUES ('violet lisse', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair7.png', 'chic', 25);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('blond future', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair8.png', 'chic', 25);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('goth', (SELECT id FROM category WHERE name='accessory'), 'assets/clothes/accessories/accessoire1.png', 'soiree', 5);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
@@ -120,6 +126,12 @@ VALUES ('pink', (SELECT id FROM category WHERE name='accessory'), 'assets/clothe
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('necklace', (SELECT id FROM category WHERE name='accessory'), 'assets/clothes/accessories/accessoire5.png', 'chic', 5);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('futurist', (SELECT id FROM category WHERE name='accessory'), 'assets/clothes/accessories/accessoire6.png', 'soiree', 5);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('queen', (SELECT id FROM category WHERE name='accessory'), 'assets/clothes/accessories/accessoire7.png', 'chic', 5);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('malefique boots', (SELECT id FROM category WHERE name='shoes'), 'assets/clothes/shoes/shoe1.png', 'casual', 10);

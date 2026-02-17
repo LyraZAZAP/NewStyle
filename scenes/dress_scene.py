@@ -1,20 +1,15 @@
-# ========================================
-# SCÈNE D'HABILLAGE (SCENE PRINCIPALE)
-# C'est ici que le joueur sélectionne les vêtements
-# ========================================
-
 # === IMPORTS ===
-import os  # Pour opérations système (vérifier existence fichiers, parcours dossiers)
-import shutil  # Pour supprimer des dossiers récursivement (__pycache__)
-import pygame as pg  # Pygame pour le rendu graphique et événements
-from typing import Dict  # Annotations de type pour les dictionnaires
-from scenes.base_scene import Scene  # Classe abstraite de base pour les scènes
-from repositories import CategoryRepo, GarmentRepo  # Accès BD pour catégories et vêtements
-from services import Outfit  # Logique métier pour gérer la tenue
-from config import SIDEBAR_BG_PATH, STAGE_BG_PATH  # Chemins des fonds d'écran
+import os  # opérations système (vérification existence fichiers, parcours dossiers)
+import shutil  # utilitaires fichiers (suppression récursive de dossiers)
+import pygame as pg  # bibliothèque de jeu pygame (alias pg pour concision)
+from typing import Dict  # annotations de type pour les dictionnaires
+from scenes.base_scene import Scene  # classe abstraite de base pour toutes les scènes
+from repositories import CategoryRepo, GarmentRepo  # accès BDD pour catégories et vêtements
+from services import Outfit  # logique métier de gestion de tenue
+from config import SIDEBAR_BG_PATH, STAGE_BG_PATH  # chemins des fonds d'écran
 
 # === CONSTANTES ===
-SCROLL_SPEED = 40  # Pixels à scroller quand on utilise la molette souris
+SCROLL_SPEED = 40  # Pixels défilés par cran de molette (ajustable selon préférence)
 
 # === FONCTIONS UTILITAIRES ===
 def _load_background(path, size, fallback_color):
@@ -87,8 +82,6 @@ class DressScene(Scene):
             mannequin (Mannequin): Mannequin sélectionné pour cette partie
             theme (tuple): (code_theme, libellé_theme) - ex: ("casual", "Casual")
         """
-        
-        
         super().__init__(game)  # conserve la référence au jeu
         self.mannequin = mannequin  # mannequin utilisé
         self.theme_code, self.theme_label = theme  # décompose le tuple thème
@@ -108,8 +101,8 @@ class DressScene(Scene):
         self.scrollbar_drag_offset = 0  # décalage souris-thumb lors du drag
 
         # --- Zones de l'écran (rectangles pygame) ---
-        self.sidebar = pg.Rect(0, 0, 320, self.game.h)  # zone gauche (galerie de vêtements)
-        self.stage = pg.Rect(320, 0, self.game.w - 320, self.game.h)  # zone droite (mannequin)
+        self.sidebar = pg.Rect(0, 0, 320, self.game.h)  # zone gauche (galerie de vêtements) 
+        self.stage = pg.Rect(320, 0, self.game.w - 320, self.game.h)  # zone droite (mannequin) 
 
         # --- Chargement des fonds d'écran ---
         # Charge les images ou utilise des couleurs unies par défaut
