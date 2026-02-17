@@ -76,7 +76,20 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
         # --- Chargement du fond d'écran ---
         # Charge l'image ou utilise une couleur unie par défaut si l'image n'existe pas
-        self.bg = _load_background(MENU_BG_PATH, (self.game.w, self.game.h))
+        # On charge un fond un peu plus grand pour permettre le déplacement
+
+        #creation de parallaxe pour le fond d'écran du menu
+        self.bg = _load_background(
+            MENU_BG_PATH,
+            (int(self.game.w * 1.1), int(self.game.h * 1.1))
+        )
+
+        # Offsets pour le parallaxe
+        self.bg_offset_x = 0
+        self.bg_offset_y = 0
+
+        # Intensité du mouvement (plus grand = bouge moins)
+        self.parallax_speed = 40
 
     def draw(self, screen):
         """
@@ -86,7 +99,25 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
             screen (pygame.Surface): Surface principale du jeu
         """
         # --- Fond d'écran ---
-        screen.blit(self.bg, (0, 0))  # dessiner le fond en premier plan (arrière-plan)
+        # --- Calcul du parallaxe ---
+        mouse_x, mouse_y = pg.mouse.get_pos()
+
+        center_x = screen.get_width() / 2
+        center_y = screen.get_height() / 2
+
+        target_x = (center_x - mouse_x) / self.parallax_speed
+        target_y = (center_y - mouse_y) / self.parallax_speed
+
+        # Mouvement fluide (inertie)
+        self.bg_offset_x += (target_x - self.bg_offset_x) * 0.1
+        self.bg_offset_y += (target_y - self.bg_offset_y) * 0.1
+
+        # Position centrée + offset
+        bg_x = -(self.bg.get_width() - screen.get_width()) // 2 + self.bg_offset_x
+        bg_y = -(self.bg.get_height() - screen.get_height()) // 2 + self.bg_offset_y
+
+        screen.blit(self.bg, (bg_x, bg_y))
+
         
         # --- Titre du jeu ---
         title = self.title_font.render("Style Dress", True, (30, 30, 60))  # rend le texte
