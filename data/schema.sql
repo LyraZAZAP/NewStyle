@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS run_result (-- Crée la table "run_result" pour stock
 
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    login TEXT NOT NULL UNIQUE,
+    username TEXT NOT NULL UNIQUE,
     display_name TEXT NOT NULL,
     avatar_path TEXT NOT NULL DEFAULT 'assets/avatars/default.png',
     password_hash BLOB NOT NULL,

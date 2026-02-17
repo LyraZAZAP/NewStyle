@@ -1,10 +1,18 @@
-import pygame as pg
-from scenes.base_scene import Scene
-from ui.widgets import Button
-from db import DB
+# ========================================
+# SCÈNE DE CONNEXION (LOGIN)
+# Permet à l'utilisateur de se connecter à son compte
+# ========================================
+
+# === IMPORTS ===
+import pygame as pg  # Pygame pour l'affichage et les événements
+from scenes.base_scene import Scene  # Classe de base pour les scènes
+from ui.widgets import Button  # Widget bouton réutilisable
+from db import DB  # Base de données - authentification
 
 
 class LoginScene(Scene):
+    """Écran de login avec champs username/password et boutons."""
+    
     def __init__(self, game):
         super().__init__(game)
         self.title_font = pg.font.SysFont(None, 56)
@@ -31,6 +39,7 @@ class LoginScene(Scene):
         self.buttons = []
 
         def do_login():
+            # BASE DE DONNÉES : vérifier les identifiants de l'utilisateur
             ok, msg, user = DB.authenticate(self.username, self.password)
             self.message = msg
             if ok and user:
@@ -122,6 +131,7 @@ class LoginScene(Scene):
 
             if event.key == pg.K_RETURN:
                 # Enter => tentative de connexion
+                # BASE DE DONNÉES : authentifier l'utilisateur avec le username et le mot de passe
                 ok, msg, user = DB.authenticate(self.username, self.password)
                 self.message = msg
                 if ok and user:

@@ -1,12 +1,34 @@
-WINDOW_WIDTH = 1024  # au lieu de 1024
-WINDOW_HEIGHT = 640  # au lieu de 640
-FPS = 60
-DB_PATH = "data/game.db"
-TITLE = "Jeu de Dressing"
-BACKGROUND_COLOR = (240, 240, 245)
+# ========================================
+# CONFIGURATION DU JEU
+# ========================================
 
-# Chemins des fonds d'écran
-SIDEBAR_BG_PATH = "assets/backgrounds/sidebar_bg.png"
-STAGE_BG_PATH = "assets/backgrounds/stage_bg.png"
-MENU_BG_PATH = "assets/backgrounds/menu_bg.png"
-RESULT_BG_PATH = "assets/backgrounds/stage_bg.png"
+# === DIMENSIONS DE LA FENÊTRE ===
+WINDOW_WIDTH = 1024  # Largeur de la fenêtre en pixels
+WINDOW_HEIGHT = 640  # Hauteur de la fenêtre en pixels
+
+# === PERFORMANCE ===
+FPS = 60  # Nombre d'images par seconde (60 FPS = 60 mises à jour par seconde)
+
+# === BASE DE DONNÉES ===
+DB_PATH = "data/game.db"  # Chemin vers le fichier de la base de données SQLite
+
+# === TITRE ET COULEUR ===
+TITLE = "Jeu de Dressing"  # Titre affiché dans la barre de la fenêtre
+BACKGROUND_COLOR = (240, 240, 245)  # Couleur de fond par défaut (RGB : gris-bleu clair)
+
+# === CHEMINS DES IMAGES DE FOND D'ÉCRAN ===
+SIDEBAR_BG_PATH = "assets/backgrounds/sidebar_bg.png"  # Fond pour la zone de galerie (gauche)
+STAGE_BG_PATH = "assets/backgrounds/stage_bg.png"  # Fond pour la zone mannequin (droite)
+MENU_BG_PATH = "assets/backgrounds/menu_bg.png"  # Fond pour l'écran menu principal
+RESULT_BG_PATH = "assets/backgrounds/stage_bg.png"  # Fond pour l'écran résultat
+
+# === DISQUE MUSICAL (WIDGET UI) ===
+DISC_IMG_PATH = "assets/ui/disc.png"  # Image du disque vinyl qui tourne
+DISC_BTN_PATH = "assets/ui/disc_button.png"  # Bouton au centre du disque
+
+# === LISTES DE MUSIQUES ===
+MUSIC_TRACKS = [
+    "assets/music/track1.ogg",  # Piste 1 de la bande sonore
+    "assets/music/track2.ogg",  # Piste 2 de la bande sonore
+    "assets/music/track3.ogg",  # Piste 3 de la bande sonore
+]

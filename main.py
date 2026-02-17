@@ -1,20 +1,40 @@
-import os
-import gc
-import time
-import pygame as pg
+# ========================================
+# FICHIER PRINCIPAL DU JEU
+# Point d'entrée - Contient la boucle principale et la navigation
+# ========================================
 
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TITLE
-from scenes.menu_scene import MenuScene
-from scenes.dress_scene import DressScene
-from scenes.result_scene import ResultScene
-from scenes.login_scene import LoginScene
-from scenes.register_scene import RegisterScene
-from db import DB
+# === IMPORTS SYSTÈME ===
+import os  # Pour opérations système
+import gc  # Garbage collector (nettoie la mémoire)
+import time  # Pour gérer les délais
+import pygame as pg  # Pygame - bibliothèque de jeu
+
+# === IMPORTS CONFIGURATION ===
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TITLE  # Paramètres du jeu
+
+# === IMPORTS SCÈNES ===
+from scenes.menu_scene import MenuScene  # Écran menu principal
+from scenes.dress_scene import DressScene  # Écran habillage (principal)
+from scenes.result_scene import ResultScene  # Écran résultat final
+from scenes.login_scene import LoginScene  # Écran login
+from scenes.register_scene import RegisterScene  # Écran inscription
+
+# === IMPORTS AUTRES ===
+from db import DB  # Base de données
+from audio_manager import AudioManager  # Gestion des musiques
+from config import MUSIC_TRACKS  # Liste des fichiers musicaux
 
 
+# ========================================
+# CLASSE GAME - ORCHESTRATEUR PRINCIPAL
+# Gère la fenêtre, les événements globaux et la navigation entre scènes
+# ========================================
 class Game:
     def __init__(self):
         pg.init()
+        self.audio = AudioManager(MUSIC_TRACKS, volume=0.6)
+        self.audio.play()  # démarre la 1ère musique
+
         self.w, self.h = WINDOW_WIDTH, WINDOW_HEIGHT
         self.screen = pg.display.set_mode((self.w, self.h))
         pg.display.set_caption(TITLE)
@@ -81,6 +101,7 @@ class Game:
     def cleanup(self):
         """Nettoyage à la fermeture."""
         try:
+            # BASE DE DONNÉES : fermer la connexion à la base de données
             DB.close()
 
             gc.collect()

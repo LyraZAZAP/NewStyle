@@ -1,26 +1,35 @@
-from dataclasses import dataclass  # utilitaire pour créer des classes de données immutables/structurées
-from typing import Optional  # type optionnel pour indiquer qu'un champ peut être None
+# ========================================
+# MODÈLES DE DONNÉES (DATACLASSES)
+# Définition des structures de données utilisées dans le jeu
+# ========================================
+
+# === IMPORTS ===
+from dataclasses import dataclass  # Décorateur pour créer des dataclasses (classes de données simples)
+from typing import Optional  # Type optionnel (champ peut être None)
 
 
-@dataclass  # transforme la classe en dataclass (ajoute __init__, __repr__, etc.)
-class Category:  # Représente une catégorie d'articles (top, bottom, etc.)
+# === CATÉGORIES DE VÊTEMENTS ===
+@dataclass  # Décorateur transforme la classe en dataclass avec __init__, __repr__, etc.
+class Category:  # Représente une catégorie de vêtements (Top, Bottom, Shoes, etc.)
     id: int  # Identifiant unique de la catégorie
-    name: str  # Nom de la catégorie (ex: 'top')
-    max_items: int = 1  # Nombre max d'éléments sélectionnables pour cette catégorie (défaut 1)
+    name: str  # Nom de la catégorie (ex: 'Top', 'Bottom', 'Shoes')
+    max_items: int = 1  # Nombre maximum de vêtements de cette catégorie dans une tenue (défaut : 1)
 
 
-@dataclass  # Dataclass représentant un vêtement/article
-class Garment:  # Représente un vêtement disponible dans le jeu
+# === VÊTEMENTS ===
+@dataclass  # Transforme la classe en dataclass
+class Garment:  # Représente un vêtement/article du jeu
     id: int  # Identifiant unique du vêtement
-    name: str  # Nom lisible du vêtement
-    category_id: int  # Référence vers l'id de la catégorie (category.id)
-    sprite_path: str  # Chemin vers le sprite/image de l'article
-    score_theme: Optional[str] = None  # Thème pour lequel l'article apporte des points (ou None)
-    price: int = 0  # Prix de l'article (par défaut 0)
+    name: str  # Nom du vêtement (ex: 'Red T-Shirt', 'Blue Jeans')
+    category_id: int  # Référence vers la catégorie (lien vers Category.id)
+    sprite_path: str  # Chemin vers l'image/sprite du vêtement
+    score_theme: Optional[str] = None  # Thème pour lequel ce vêtement donne des points (optionnel)
+    price: int = 0  # Prix du vêtement en devises du jeu (défaut : 0)
 
 
-@dataclass  # Dataclass pour un mannequin (personnage habillé)
-class Mannequin:  # Représente un mannequin exemple ou jouable
-    id: int  # Identifiant du mannequin
-    name: str  # Nom du mannequin
-    base_sprite_path: str  # Chemin vers le sprite de base du mannequin
+# === MANNEQUINS ===
+@dataclass  # Transforme la classe en dataclass
+class Mannequin:  # Représente un mannequin (personnage) qu'on peut habiller
+    id: int  # Identifiant unique du mannequin
+    name: str  # Nom du mannequin (ex: 'Lina', 'Alex')
+    base_sprite_path: str  # Chemin vers l'image de base du mannequin (sans vêtements)

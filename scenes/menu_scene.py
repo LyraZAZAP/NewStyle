@@ -1,13 +1,22 @@
-import random  # utilitaire pour choisir aléatoirement
-import os  # pour vérifier l'existence des fichiers
-import pygame as pg  # pygame importé sous le nom pg
-from scenes.base_scene import Scene  # classe de base pour les scènes
-from ui.widgets import Button  # widget bouton réutilisable
-from repositories import MannequinRepo  # repo pour récupérer les mannequins
-from models import Mannequin  # modèle de données mannequin
-from config import MENU_BG_PATH  # chemin du fond d'écran menu
+# ========================================
+# SCÈNE MENU PRINCIPAL
+# Affiche après la connexion avec avatar et bouton "Nouvelle partie"
+# ========================================
 
-# Liste des thèmes disponibles : chaque tuple contient (code interne, libellé affiché)
+# === IMPORTS ===
+import random  # Pour choisir thème et mannequin aléatoires
+import os  # Pour vérifier l'existence des fichiers
+import pygame as pg  # Pygame pour l'affichage et les événements
+from scenes.base_scene import Scene  # Classe de base pour les scènes
+from ui.widgets import Button  # Widget bouton réutilisable
+from repositories import MannequinRepo  # Récupère les mannequins de la BD
+from models import Mannequin  # Modèle de données mannequin
+from config import MENU_BG_PATH  # Chemin du fond d'écran
+from ui.music_disc import MusicDiscWidget  # Widget disque musical tournant
+from config import DISC_IMG_PATH, DISC_BTN_PATH  # Images du disque
+
+# === THÈMES DISPONIBLES ===
+# Liste des (code_interne, libellé_affiché) pour le jeu
 THEMES = [
     ("casual", "Casual"),      # Style décontracté
     ("soiree", "Soirée"),      # Tenue élégante
@@ -113,6 +122,17 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
         # intensité du mouvement (en pixels max)
         self.parallax = 25
+        self.music_disc = MusicDiscWidget(
+            self.game,
+            DISC_IMG_PATH,
+            DISC_BTN_PATH,
+            size=220,           # taille du disque
+            anchor="topright",  # coin
+            margin=16,
+            speed_deg=70        # vitesse rotation
+        )
+
+        
 
     def draw(self, screen):
         """
@@ -138,6 +158,9 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         y = (self.game.h - bh) // 2 + dy
 
         screen.blit(self.bg_scaled, (x, y))
+        
+        self.music_disc.draw(screen)
+
         
                 # --- Affichage avatar + pseudo en haut à gauche ---
         badge_x, badge_y = 15, 15
@@ -192,6 +215,9 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
             event (pygame.Event): Événement pygame à traiter
         """
         # --- Clic sur le bouton plein écran ---
+        if self.music_disc.handle_event(event):
+            return
+
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:  # clic gauche
             if self.fullscreen_btn.collidepoint(event.pos):  # si clic sur le bouton fullscreen
                 self.game.toggle_fullscreen()  # bascule fenêtre <-> plein écran
@@ -200,3 +226,6 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         # --- Transmet l'événement aux autres boutons du menu ---
         for b in self.buttons:  # parcourt tous les boutons (ex: "Nouvelle partie")
             b.handle(event)  # chaque bouton gère ses propres clics
+            
+    def update(self, dt):
+        self.music_disc.update(dt)

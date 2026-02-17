@@ -1,12 +1,22 @@
-import os
-import pygame as pg
-from scenes.base_scene import Scene
-from ui.widgets import Button
-from db import DB
+# ========================================
+# SCÈNE D'INSCRIPTION (REGISTER)
+# Permet au nouvel utilisateur de créer un compte
+# ========================================
 
-AVATAR_DIR = "assets/avatars"
+# === IMPORTS ===
+import os  # Pour parcourir les dossiers d'avatars
+import pygame as pg  # Pygame pour l'affichage et les événements
+from scenes.base_scene import Scene  # Classe de base pour les scènes
+from ui.widgets import Button  # Widget bouton réutilisable
+from db import DB  # Base de données - création utilisateur
+
+# === CONFIGURATION ===
+AVATAR_DIR = "assets/avatars"  # Dossier contenant les avatars disponibles
+
 
 class RegisterScene(Scene):
+    """Écran d'inscription avec champs username/display_name/password et sélection d'avatar."""
+    
     def __init__(self, game):
         super().__init__(game)
         self.title_font = pg.font.SysFont(None, 56)
@@ -21,13 +31,13 @@ class RegisterScene(Scene):
             self.bg = None
 
         # Champs
-        self.login_rect = pg.Rect(340, 210, 340, 45)
-        self.pseudo_rect = pg.Rect(340, 270, 340, 45)
+        self.username_rect = pg.Rect(340, 210, 340, 45)
+        self.display_name_rect = pg.Rect(340, 270, 340, 45)
         self.password_rect = pg.Rect(340, 330, 340, 45)
-        self.active_field = "login"
+        self.active_field = "username"
 
-        self.login = ""
-        self.pseudo = ""
+        self.username = ""
+        self.display_name = ""
         self.password = ""
         self.message = ""
 
@@ -48,22 +58,24 @@ class RegisterScene(Scene):
 
         def do_register():
             # Prépare les valeurs
-            login_val = self.login.strip() or self.pseudo.strip()
-            display_name = self.pseudo.strip() or login_val
-            password_val = self.password
+            username_val = self.username.strip()
+            display_name_val = self.display_name.strip()
+            password_val = self.password.strip()
 
             # Avatar sélectionné (ou None)
             avatar_path = None
             if self.avatars:
                 avatar_path = self.avatars[self.avatar_index]
 
-            # Appel DB : create_user(login, display_name, password, avatar_path)
-            ok, msg = DB.create_user(login_val, display_name, password_val, avatar_path)
+            # BASE DE DONNÉES : créer un nouvel utilisateur dans la table users
+            # Appel DB : create_user(username, display_name, password, avatar_path)
+            ok, msg = DB.create_user(username_val, display_name_val, password_val, avatar_path)
             self.message = msg
 
             if ok:
                 # Connexion automatique après inscription
-                ok2, msg2, user = DB.authenticate(login_val, password_val)
+                # BASE DE DONNÉES : authentifier automatiquement l'utilisateur qu'on vient de créer
+                ok2, msg2, user = DB.authenticate(username_val, password_val)
                 if ok2 and user:
                     self.game.current_user_id = user.get("id")
                     self.game.current_username = user.get("display_name")
@@ -116,8 +128,8 @@ class RegisterScene(Scene):
         title = self.title_font.render("Inscription", True, (255, 255, 255))
         screen.blit(title, title.get_rect(center=(self.game.w // 2, 120)))
 
-        self._draw_input(screen, self.login_rect, "Identifiant (login)", self.login, self.active_field == "login")
-        self._draw_input(screen, self.pseudo_rect, "Pseudo", self.pseudo, self.active_field == "pseudo")
+        self._draw_input(screen, self.username_rect, "Identifiant", self.username, self.active_field == "username")
+        self._draw_input(screen, self.display_name_rect, "Pseudo affichage", self.display_name, self.active_field == "display_name")
         self._draw_input(screen, self.password_rect, "Mot de passe", self.password, self.active_field == "password", password=True)
 
         # Aperçu avatar
@@ -140,36 +152,36 @@ class RegisterScene(Scene):
 
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            if self.login_rect.collidepoint(event.pos):
-                self.active_field = "login"
-            elif self.pseudo_rect.collidepoint(event.pos):
-                self.active_field = "pseudo"
+            if self.username_rect.collidepoint(event.pos):
+                self.active_field = "username"
+            elif self.display_name_rect.collidepoint(event.pos):
+                self.active_field = "display_name"
             elif self.password_rect.collidepoint(event.pos):
                 self.active_field = "password"
 
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_TAB:
-                order = ["login", "pseudo", "password"]
+                order = ["username", "display_name", "password"]
                 self.active_field = order[(order.index(self.active_field) + 1) % 3]
                 return
 
             if event.key == pg.K_BACKSPACE:
-                if self.active_field == "login":
-                    self.login = self.login[:-1]
-                elif self.active_field == "pseudo":
-                    self.pseudo = self.pseudo[:-1]
+                if self.active_field == "username":
+                    self.username = self.username[:-1]
+                elif self.active_field == "display_name":
+                    self.display_name = self.display_name[:-1]
                 else:
                     self.password = self.password[:-1]
                 return
 
             ch = event.unicode
             if ch and ch.isprintable():
-                if self.active_field == "login":
-                    if len(self.login) < 24 and ch != " ":
-                        self.login += ch
-                elif self.active_field == "pseudo":
-                    if len(self.pseudo) < 24:
-                        self.pseudo += ch
+                if self.active_field == "username":
+                    if len(self.username) < 24 and ch != " ":
+                        self.username += ch
+                elif self.active_field == "display_name":
+                    if len(self.display_name) < 24:
+                        self.display_name += ch
                 else:
                     if len(self.password) < 32:
                         self.password += ch

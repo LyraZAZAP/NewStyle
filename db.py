@@ -44,18 +44,40 @@ class Database:
             # Exécute le fichier de données initiales pour peupler les tables
             con.executescript(SEED.read_text(encoding='utf-8'))
 
-            # Vérifie que la table users contient les colonnes nécessaires
+            # Vérifie si la table 'users' existe; si non, on la crée proprement
+            cur = con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+            if cur.fetchone() is None:
+                con.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT NOT NULL UNIQUE,
+                        display_name TEXT NOT NULL,
+                        avatar_path TEXT NOT NULL DEFAULT 'assets/avatars/default.png',
+                        password_hash BLOB NOT NULL,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    """
+                )
+
+            # Récupère les colonnes existantes et ajoute celles qui manquent
             try:
                 cur = con.execute("PRAGMA table_info(users)")
                 cols = [r[1] for r in cur.fetchall()]
             except sqlite3.OperationalError:
                 cols = []
 
-            # Si une colonne manque, on l'ajoute en utilisant ALTER TABLE (avec valeur par défaut)
             if 'display_name' not in cols:
                 con.execute("ALTER TABLE users ADD COLUMN display_name TEXT NOT NULL DEFAULT ''")
             if 'avatar_path' not in cols:
                 con.execute("ALTER TABLE users ADD COLUMN avatar_path TEXT NOT NULL DEFAULT 'assets/avatars/default.png'")
+            if 'username' not in cols:
+                if 'login' in cols:
+                    con.execute("ALTER TABLE users ADD COLUMN username TEXT")
+                    con.execute("UPDATE users SET username = login WHERE username IS NULL OR username = ''")
+                else:
+                    con.execute("ALTER TABLE users ADD COLUMN username TEXT NOT NULL DEFAULT ''")
+
             con.commit()
 
     def connect(self):

@@ -1,8 +1,14 @@
-import os  # pour vérifier l'existence des fichiers
-import pygame as pg  # pygame importé sous le nom pg
-from scenes.base_scene import Scene  # classe de base pour les scènes
-from services import Scoring  # service de calcul de score
-from config import RESULT_BG_PATH  # chemin du fond d'écran résultat
+# ========================================
+# SCÈNE DE RÉSULTAT
+# Affiche le score et l'aperçu final après validation de la tenue
+# ========================================
+
+# === IMPORTS ===
+import os  # Pour vérifier l'existence des fichiers
+import pygame as pg  # Pygame pour l'affichage
+from scenes.base_scene import Scene  # Classe de base pour les scènes
+from services import Scoring  # Service de calcul de score
+from config import RESULT_BG_PATH  # Chemin du fond d'écran résultat
 
 
 def _load_background(path, size, fallback_color=(240, 240, 250)):
