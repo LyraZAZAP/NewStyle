@@ -107,7 +107,7 @@ INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, pric
 VALUES ('rouge', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair6.png', 'soiree', 25);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
-VALUES ('violet lisse', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair7.png', 'chic', 25);
+VALUES ('violet lisse', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair7.png', 'casual', 25);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('blond future', (SELECT id FROM category WHERE name='hair'), 'assets/clothes/hairs/hair8.png', 'chic', 25);
