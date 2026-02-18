@@ -147,3 +147,9 @@ VALUES ('shoe punk', (SELECT id FROM category WHERE name='shoes'), 'assets/cloth
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('blue boots', (SELECT id FROM category WHERE name='shoes'), 'assets/clothes/shoes/shoe5.png', 'chic', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('green acide', (SELECT id FROM category WHERE name='shoes'), 'assets/clothes/shoes/shoe6.png', 'colorful', 10);
+
+INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
+VALUES ('green grass', (SELECT id FROM category WHERE name='shoes'), 'assets/clothes/shoes/shoe7.png', 'casual', 10);
