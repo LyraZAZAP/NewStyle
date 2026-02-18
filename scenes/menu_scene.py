@@ -143,15 +143,15 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
             print(f"Erreur chargement titre image : {e}")
             self.title_img = None
         
-        # Disque musical qui tourne en haut-droite
+        # Disque musical qui tourne en bas-gauche
         # Le bouton au centre permet de passer à la musique suivante
         self.music_disc = MusicDiscWidget(
             self.game,
             DISC_IMG_PATH,
             DISC_BTN_PATH,
             size=600,            # taille du disque en pixels
-            anchor="downright",   # positionnement dans le coin inférieur droit
-            margin=-175,           # marge depuis le bord
+            anchor="bottomleft",   # positionnement dans le coin inférieur gauche
+            margin=-175,           # marge depuis le bord (négatif pour décaler partiellement hors écran)
             speed_deg=60         # vitesse de rotation
         )
 
