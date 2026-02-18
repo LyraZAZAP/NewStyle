@@ -109,8 +109,8 @@ class LoginScene(Scene):
             screen.blit(msg, (340, 500))
 
         # Aide rapide
-        help_txt = self.font.render("TAB pour changer de champ, ENTRÉE pour se connecter", True, (200, 200, 200))
-        screen.blit(help_txt, (340, 540))
+        help_txt = self.font.render("TAB pour changer de champ, ENTRÉE pour se connecter", True, (30, 30, 60))
+        screen.blit(help_txt, (250, 610)) # Positionne l'aide rapide en bas de l'écran, aligné à gauche
 
     def update(self, dt):
         pass
