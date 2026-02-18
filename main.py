@@ -22,6 +22,7 @@ from scenes.register_scene import RegisterScene  # Écran inscription
 # === IMPORTS AUTRES ===
 from db import DB  # Base de données
 from audio_manager import AudioManager  # Gestion des musiques
+from repositories import UserRepo  # Repository pour les utilisateurs
 from config import MUSIC_TRACKS  # Liste des fichiers musicaux
 
 
@@ -51,10 +52,14 @@ class Game:
         # Scène de départ : LOGIN
         self.scene = None
         self.set_scene("login")
+        assert self.scene is not None  # Pour le type checker - scene est toujours définie
 
-        # Infos utilisateur (remplies après connexion)
         # `current_avatar` contient le chemin vers l'image à afficher
         self.current_avatar = None
+        self.cached_avatar = None  # Avatar mis en cache pour éviter les rechargements
+
+        # Exporte les utilisateurs en JSON à chaque démarrage
+        UserRepo.export_to_json()
 
     # Méthode unique pour changer de scène
     def set_scene(self, name, *args):
@@ -64,7 +69,7 @@ class Game:
         
         # Lance la musique si on va vers menu ou habillage
         if name in ["menu", "dress"]:
-            if not self.audio.is_playing():  # Seulement si elle ne joue pas déjà
+            if self.audio and not self.audio.is_playing():  # Vérification audio + check si elle ne joue pas
                 self.audio.play()
         
         # Navigue vers la bonne scène
@@ -94,7 +99,9 @@ class Game:
         self.set_scene("menu")
         
     def goto_login(self):
+        """Retour à l'écran de connexion/inscription."""
         self.set_scene("login")
+        self.cached_avatar = None  # Réinitialise le cache
 
     def goto_register(self):
         self.set_scene("register")
@@ -105,10 +112,6 @@ class Game:
     def goto_result(self, mannequin, theme, outfit, worn_garments):
         self.set_scene("result", mannequin, theme, outfit, worn_garments)
 
-    def goto_login(self):
-        """Retour à l'écran de connexion/inscription."""
-        self.set_scene("login")
-
     def cleanup(self):
         """Nettoyage à la fermeture."""
         try:
@@ -118,13 +121,15 @@ class Game:
             gc.collect()
             time.sleep(0.5)
 
-            # ⚠️ IMPORTANT :
-            # Si tu veux garder les comptes utilisateur, NE SUPPRIME PAS la DB.
-            # Commente/supprime ce bloc quand tu voudras conserver les users.
-            db_path = os.path.join("data", "game.db")
-            if os.path.exists(db_path):
-                os.remove(db_path)
-                print("data/game.db supprimé.")
+            # ✅ MODIFICATION: Les comptes utilisateur sont maintenant conservés
+            # La base de données est gardée entre les lancements du jeu
+            # Les utilisateurs restent enregistrés d'une partie à l'autre
+            # (Décommentez les lignes ci-dessous si vous voulez réinitialiser à chaque fois)
+            
+            # db_path = os.path.join("data", "game.db")
+            # if os.path.exists(db_path):
+            #     os.remove(db_path)
+            #     print("data/game.db supprimé.")
         except Exception as e:
             print(f"Erreur lors du cleanup : {e}")
 
@@ -132,6 +137,39 @@ class Game:
         self.is_fullscreen = not self.is_fullscreen
         flags = pg.FULLSCREEN if self.is_fullscreen else 0
         self.screen = pg.display.set_mode((self.w, self.h), flags)
+
+    def _draw_avatar(self):
+        """Affiche l'avatar et le pseudo de l'utilisateur en bas à droite."""
+        user_id = getattr(self, "current_user_id", None)
+        avatar_path = getattr(self, "current_avatar", None)
+        if user_id and avatar_path:
+            try:
+                # Charge et met en cache l'avatar une seule fois
+                if self.cached_avatar is None or self.cached_avatar[1] != avatar_path:
+                    avatar_img = pg.image.load(avatar_path)
+                    avatar_img = avatar_img.convert_alpha() if avatar_img.get_alpha() is not None else avatar_img.convert()
+                    avatar_img = pg.transform.smoothscale(avatar_img, (175, 175))
+                    self.cached_avatar = (avatar_img, avatar_path)
+                else:
+                    avatar_img = self.cached_avatar[0]
+                
+                margin = 16
+                aw, ah = avatar_img.get_width(), avatar_img.get_height()
+                ax = self.screen.get_width() - margin - aw
+                ay = self.screen.get_height() - margin - ah
+                self.screen.blit(avatar_img, (ax, ay))
+
+                # Affiche le pseudo centré au-dessus de l'avatar si présent
+                username = getattr(self, "current_username", None)
+                if username:
+                    font = pg.font.SysFont(None, 22)
+                    txt = font.render(username, True, (255, 255, 255))
+                    pw, ph = txt.get_width(), txt.get_height()
+                    px = ax + (aw - pw) // 2
+                    py = ay - 6 - ph
+                    self.screen.blit(txt, (px, py))
+            except Exception:
+                pass
 
     def run(self):
         while self.running:
@@ -146,33 +184,13 @@ class Game:
                 ):
                     self.toggle_fullscreen()
                 else:
-                    self.scene.handle_event(event)
+                    if self.scene:
+                        self.scene.handle_event(event)
 
-            self.scene.update(dt)
-            self.scene.draw(self.screen)
-
-            # Affiche avatar + pseudo en bas à droite si connecté
-            if getattr(self, "current_user_id", None) and getattr(self, "current_avatar", None):
-                try:
-                    avatar_img = pg.image.load(self.current_avatar)
-                    avatar_img = avatar_img.convert_alpha() if avatar_img.get_alpha() is not None else avatar_img.convert()
-                    avatar_img = pg.transform.smoothscale(avatar_img, (175, 175))  # Redimensionne à 175x175
-                    margin = 16 # Marge depuis le bord de l'écran
-                    aw, ah = avatar_img.get_width(), avatar_img.get_height()
-                    ax = self.screen.get_width() - margin - aw # Positionne à droite avec une marge
-                    ay = self.screen.get_height() - margin - ah
-                    self.screen.blit(avatar_img, (ax, ay)) # Affiche l'avatar en bas à droite
-
-                    # Affiche le pseudo centré au-dessus de l'avatar si présent
-                    if getattr(self, "current_username", None):
-                        font = pg.font.SysFont(None, 24) # Police pour le pseudo des utilisateurs
-                        txt = font.render(self.current_username, True, (121, 6, 70)) # Texte du pseudo 
-                        pw, ph = txt.get_width(), txt.get_height() # Dimensions du texte
-                        px = ax + (aw - pw) // 2
-                        py = ay - 6 - ph
-                        self.screen.blit(txt, (px, py))
-                except Exception:
-                    pass
+            if self.scene:
+                self.scene.update(dt)
+                self.scene.draw(self.screen)
+            self._draw_avatar()
             pg.display.flip()
 
         self.cleanup()

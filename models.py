@@ -33,3 +33,13 @@ class Mannequin:  # Représente un mannequin (personnage) qu'on peut habiller
     id: int  # Identifiant unique du mannequin
     name: str  # Nom du mannequin (ex: 'Lina', 'Alex')
     base_sprite_path: str  # Chemin vers l'image de base du mannequin (sans vêtements)
+
+
+# === UTILISATEURS ===
+@dataclass  # Transforme la classe en dataclass
+class User:  # Représente un compte utilisateur du jeu
+    id: int  # Identifiant unique de l'utilisateur
+    username: str  # Nom d'utilisateur unique (pour la connexion)
+    display_name: str  # Nom d'affichage du joueur
+    avatar_path: str  # Chemin vers l'avatar de l'utilisateur
+    created_at: Optional[str] = None  # Date de création du compte

@@ -71,9 +71,15 @@ class MusicDiscWidget:
         btn_y_offset = (btn_size - btn_h) // 2
         self.btn_surf.blit(btn_resized, (btn_x_offset, btn_y_offset))
 
-        # Calcule la position du disque
-        self.center = self._compute_center()
-        # Rectangle du bouton au centre du disque
+        # Calcule la position du disque (stockée en Vector2 pour les calculs)
+        self.center = pg.Vector2(self._compute_center())
+        # Paramètres de l'effet parallax inverse
+        # Rayon d'influence (au-delà de cette distance, pas d'effet)
+        self.influence_radius = max(200, int(self.size * 0.6))
+        # Déplacement max en pixels vers la souris lorsque très proche
+        self.max_offset = max(8, int(self.size * 0.06))
+
+        # Rectangle du bouton (sera mis à jour à chaque draw pour tenir compte du parallax)
         self.btn_rect = self.btn_surf.get_rect(center=self.center)
 
     def _compute_center(self):
@@ -87,14 +93,14 @@ class MusicDiscWidget:
             return (m + r, m + r)
         if self.anchor == "topright":
             return (w - m - r, m + r)
-        if self.anchor == "bottomleft":
-            return (m + r, h - m - r)
-        # bottomright par défaut
-        return (w - m - r, h - m - r)
+        if self.anchor == "bottomright":
+            return (w - m - r, h - m - r)
+        # bottomleft par défaut
+        return (m + r, h - m - r) 
 
     def on_resize(self):
         """Recalcule la position si la fenêtre est redimensionnée."""
-        self.center = self._compute_center()
+        self.center = pg.Vector2(self._compute_center())
         self.btn_rect = self.btn_surf.get_rect(center=self.center)
 
     def update(self, dt):
@@ -115,11 +121,32 @@ class MusicDiscWidget:
 
     def draw(self, screen):
         """Dessine le disque tournant et le bouton."""
+        # Calcule l'offset de parallax inverse en fonction de la position souris
+        mx, my = pg.mouse.get_pos()
+        mouse = pg.Vector2(mx, my)
+        dir_vec = mouse - self.center
+        dist = dir_vec.length()
+
+        if dist > 0:
+            influence = max(0.5, 0.5 - (dist / float(self.influence_radius)))
+            if influence > 0:
+                offset = dir_vec.normalize() * (influence * self.max_offset) # Offset vers la souris (parallax inverse)
+            else:
+                offset = pg.Vector2(0, 0) # Pas d'effet si hors de portée
+        else:
+            offset = pg.Vector2(0, 0) # Pas d'effet si la souris est exactement au centre (évite division par zéro)
+
+        # Centre de rendu tenant compte du parallax (le disque "s'approche" de la souris)
+        render_center = self.center + offset - 1.5 * offset  # Ajuste pour que le disque "s'éloigne" légèrement de la souris (parallax inverse)
+
         # Disque tournant : applique une rotation à l'image
         rotated = pg.transform.rotozoom(self.disc_base, -self.angle, 1.0)
-        rect = rotated.get_rect(center=self.center)
+        rect = rotated.get_rect(center=render_center)
         # Dessine le disque sur l'écran
         screen.blit(rotated, rect)
+
+        # Met à jour la hitbox du bouton pour qu'elle suive le rendu
+        self.btn_rect = self.btn_surf.get_rect(center=render_center)
 
         # Dessine le bouton par-dessus (au centre du disque)
         screen.blit(self.btn_surf, self.btn_rect)

@@ -173,30 +173,30 @@ class ResultScene(Scene):  # Écran affichant le résultat après validation de 
         screen.blit(title, title_rect)
 
         # Score obtenu
-        score_text = self.small_font.render(f"Score: {self.score}", True, (50, 50, 80))
-        score_rect = score_text.get_rect(topleft=(20, 80))
-        bg_rect = score_rect.inflate(20, 10)
+        score_text = self.small_font.render(f"Score: {self.score}", True, (50, 50, 80)) # Affiche le score obtenu dans une police plus petite et une couleur différente pour le différencier du titre
+        score_rect = score_text.get_rect(topleft=(20, 80)) # Positionne le score sous le titre avec un peu d'espace
+        bg_rect = score_rect.inflate(20, 10) # padding pour le score 
         bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)
-        bg_surf.fill((255, 255, 255, 200))
-        screen.blit(bg_surf, bg_rect.topleft)
-        screen.blit(score_text, score_rect)
+        bg_surf.fill((255, 255, 255, 200)) # fond blanc semi-transparent pour le score
+        screen.blit(bg_surf, bg_rect.topleft) # Affiche le fond derrière le score pour améliorer la lisibilité
+        screen.blit(score_text, score_rect) # Affiche le score obtenu dans un encadré similaire au titre
 
         # Argent gagné
-        mo = self.small_font.render(f"Argent gagné: {self.money}", True, (30, 30, 60))
-        mo_rect = mo.get_rect(topleft=(40, 160))
-        bg_rect = mo_rect.inflate(20, 10)
-        bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)
-        bg_surf.fill((255, 255, 255, 200))
-        screen.blit(bg_surf, bg_rect.topleft)
-        screen.blit(mo, mo_rect)
+        mo = self.small_font.render(f"Argent gagné: {self.money}", True, (30, 30, 60)) # Affiche l'argent gagné dans la même police que le score mais avec une couleur plus sombre pour différencier les deux informations
+        mo_rect = mo.get_rect(topleft=(40, 160)) # Positionne l'argent gagné sous le score avec un peu plus d'espace pour les différencier
+        bg_rect = mo_rect.inflate(20, 10) # padding pour l'argent gagné
+        bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA) # surface avec alpha pour le fond de l'argent gagné 
+        bg_surf.fill((255, 255, 255, 200)) # fond blanc semi-transparent pour l'argent gagné
+        screen.blit(bg_surf, bg_rect.topleft) # Affiche le fond derrière l'argent gagné pour améliorer la lisibilité
+        screen.blit(mo, mo_rect) # Affiche l'argent gagné dans un encadré similaire au score
 
         # Instruction pour retour au menu
-        hint = self.small_font.render("R = Retour menu", True, (60, 60, 80))
-        hint_rect = hint.get_rect(topleft=(40, 220))
+        hint = self.small_font.render("R = Retour menu", True, (60, 60, 80)) # Affiche l'instruction pour retourner au menu principal en bas du panneau gauche, avec une couleur plus claire pour la différencier des autres informations
+        hint_rect = hint.get_rect(topleft=(40, 220)) # Positionne l'instruction sous l'argent gagné avec un peu plus d'espace pour la différencier des autres informations
         bg_rect = hint_rect.inflate(20, 10)
         bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)
-        bg_surf.fill((255, 255, 255, 200))
-        screen.blit(bg_surf, bg_rect.topleft)
+        bg_surf.fill((255, 255, 255, 200)) # fond blanc semi-transparent pour l'instruction de retour au menu
+        screen.blit(bg_surf, bg_rect.topleft) # Affiche le fond derrière l'instruction pour améliorer la lisibilité
         screen.blit(hint, hint_rect)
 
         # --- Panneau droit: mannequin habillé (aperçu final) ---
