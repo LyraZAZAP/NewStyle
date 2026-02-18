@@ -79,6 +79,13 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         # Création du bouton "Nouvelle partie" (position, texte, callback)
         self.buttons.append(Button((412, 320, 200, 50), "Nouvelle partie", start_random))
 
+        # --- Bouton "Quitter" ---
+        def quit_game():
+            """Quitte le jeu proprement."""
+            self.game.running = False
+
+        self.buttons.append(Button((412, 390, 200, 50), "Quitter", quit_game))
+
         # --- Bouton toggle plein écran (coin supérieur droit) ---
         self.fullscreen_btn = pg.Rect(self.game.w - 120, 10, 110, 40)  # rectangle cliquable
         self.font_small = pg.font.SysFont(None, 30)  # petite police pour le texte du bouton
