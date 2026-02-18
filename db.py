@@ -150,14 +150,14 @@ class Database:
         """
         username = username.strip()
         display_name = display_name.strip()
-
+        # Validation simple des champs (longueur minimale)
         if len(username) < 3:
             return False, "Identifiant trop court (min 3)."
         if len(display_name) < 3:
             return False, "Pseudo trop court (min 3)."
         if len(password) < 6:
             return False, "Mot de passe trop court (min 6)."
-
+        # Hash le mot de passe avant de le stocker
         pw_hash = self.hash_password(password)
 
         # Utiliser un avatar par défaut si aucun n'est fourni
