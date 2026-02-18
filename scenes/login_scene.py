@@ -7,7 +7,7 @@
 import pygame as pg  # Pygame pour l'affichage et les événements
 from scenes.base_scene import Scene  # Classe de base pour les scènes
 from ui.widgets import Button  # Widget bouton réutilisable
-from db import DB  # Base de données - authentification
+from repositories import UserRepo  # Repository pour authentifier les utilisateurs
 
 
 class LoginScene(Scene):
@@ -39,14 +39,18 @@ class LoginScene(Scene):
         self.buttons = []
 
         def do_login():
-            # BASE DE DONNÉES : vérifier les identifiants de l'utilisateur
-            ok, msg, user = DB.authenticate(self.username, self.password)
-            self.message = msg
-            if ok and user:
-                self.game.current_user_id = user.get("id")
-                self.game.current_username = user.get("display_name")
-                self.game.current_avatar = user.get("avatar_path")
+            # Authentifier l'utilisateur
+            user = UserRepo.authenticate(self.username, self.password)
+            if user:
+                # Connexion réussie
+                self.game.current_user_id = user.id
+                self.game.current_username = user.display_name
+                self.game.current_avatar = user.avatar_path
+                self.message = "Connexion réussie!"
                 self.game.goto_menu()
+            else:
+                # Authentification échouée
+                self.message = "Identifiants incorrects."
 
         def do_register():
             # Rediriger vers la scène d'inscription séparée
@@ -131,15 +135,15 @@ class LoginScene(Scene):
 
             if event.key == pg.K_RETURN:
                 # Enter => tentative de connexion
-                # BASE DE DONNÉES : authentifier l'utilisateur avec le username et le mot de passe
-                ok, msg, user = DB.authenticate(self.username, self.password)
-                self.message = msg
-                if ok and user:
-                    self.game.current_user_id = user.get("id")
-                    self.game.current_username = user.get("display_name")
-                    self.game.current_avatar = user.get("avatar_path")
+                user = UserRepo.authenticate(self.username, self.password)
+                if user:
+                    self.game.current_user_id = user.id
+                    self.game.current_username = user.display_name
+                    self.game.current_avatar = user.avatar_path
+                    self.message = "Connexion réussie!"
                     self.game.goto_menu()
-                    
+                else:
+                    self.message = "Identifiants incorrects."
                 return
 
             if event.key == pg.K_BACKSPACE: # Supprimer le dernier caractère du champ actif

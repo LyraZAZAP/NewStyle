@@ -22,6 +22,7 @@ from scenes.register_scene import RegisterScene  # Écran inscription
 # === IMPORTS AUTRES ===
 from db import DB  # Base de données
 from audio_manager import AudioManager  # Gestion des musiques
+from repositories import UserRepo  # Repository pour les utilisateurs
 from config import MUSIC_TRACKS  # Liste des fichiers musicaux
 
 
@@ -56,6 +57,9 @@ class Game:
         # `current_avatar` contient le chemin vers l'image à afficher
         self.current_avatar = None
         self.cached_avatar = None  # Avatar mis en cache pour éviter les rechargements
+
+        # Exporte les utilisateurs en JSON à chaque démarrage
+        UserRepo.export_to_json()
 
     # Méthode unique pour changer de scène
     def set_scene(self, name, *args):
@@ -117,13 +121,15 @@ class Game:
             gc.collect()
             time.sleep(0.5)
 
-            # ⚠️ IMPORTANT :
-            # Si tu veux garder les comptes utilisateur, NE SUPPRIME PAS la DB.
-            # Commente/supprime ce bloc quand tu voudras conserver les users.
-            db_path = os.path.join("data", "game.db")
-            if os.path.exists(db_path):
-                os.remove(db_path)
-                print("data/game.db supprimé.")
+            # ✅ MODIFICATION: Les comptes utilisateur sont maintenant conservés
+            # La base de données est gardée entre les lancements du jeu
+            # Les utilisateurs restent enregistrés d'une partie à l'autre
+            # (Décommentez les lignes ci-dessous si vous voulez réinitialiser à chaque fois)
+            
+            # db_path = os.path.join("data", "game.db")
+            # if os.path.exists(db_path):
+            #     os.remove(db_path)
+            #     print("data/game.db supprimé.")
         except Exception as e:
             print(f"Erreur lors du cleanup : {e}")
 

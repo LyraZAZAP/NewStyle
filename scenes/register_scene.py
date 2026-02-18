@@ -8,7 +8,7 @@ import os  # Pour parcourir les dossiers d'avatars
 import pygame as pg  # Pygame pour l'affichage et les événements
 from scenes.base_scene import Scene  # Classe de base pour les scènes
 from ui.widgets import Button  # Widget bouton réutilisable
-from db import DB  # Base de données - création utilisateur
+from repositories import UserRepo  # Repository pour créer et authentifier les utilisateurs
 
 # === CONFIGURATION ===
 AVATAR_DIR = "assets/avatars"  # Dossier contenant les avatars disponibles
@@ -62,27 +62,37 @@ class RegisterScene(Scene):
             display_name_val = self.display_name.strip()
             password_val = self.password.strip()
 
-            # Avatar sélectionné (ou None)
-            avatar_path = None
+            # Validations
+            if len(username_val) < 3:
+                self.message = "Identifiant trop court (min 3)."
+                return
+            if len(display_name_val) < 3:
+                self.message = "Pseudo trop court (min 3)."
+                return
+            if len(password_val) < 6:
+                self.message = "Mot de passe trop court (min 6)."
+                return
+
+            # Avatar sélectionné
+            avatar_path = "assets/avatars/default.png"
             if self.avatars:
                 avatar_path = self.avatars[self.avatar_index]
 
-            # BASE DE DONNÉES : créer un nouvel utilisateur dans la table users
-            # Appel DB : create_user(username, display_name, password, avatar_path)
-            ok, msg = DB.create_user(username_val, display_name_val, password_val, avatar_path)
-            self.message = msg
-
-            if ok:
-                # Connexion automatique après inscription
-                # BASE DE DONNÉES : authentifier automatiquement l'utilisateur qu'on vient de créer
-                ok2, msg2, user = DB.authenticate(username_val, password_val)
-                if ok2 and user:
-                    self.game.current_user_id = user.get("id")
-                    self.game.current_username = user.get("display_name")
-                    self.game.current_avatar = user.get("avatar_path")
-                    self.game.goto_menu()
-                else:
-                    self.message = msg2
+            # Créer l'utilisateur
+            new_user = UserRepo.create(username_val, display_name_val, password_val, avatar_path)
+            
+            if new_user:
+                # Inscription réussie - Connexion automatique
+                self.game.current_user_id = new_user.id
+                self.game.current_username = new_user.display_name
+                self.game.current_avatar = new_user.avatar_path
+                self.message = "Compte créé et connecté!"
+                # Exporte le nouvel utilisateur en JSON
+                UserRepo.export_to_json()
+                self.game.goto_menu()
+            else:
+                # Inscription échouée (prob. username déjà utilisé)
+                self.message = "Erreur: cet identifiant existe déjà ou une erreur est survenue."
 
         def back():
             self.game.goto_login()

@@ -37,12 +37,17 @@ class Database:
 
     def _init_db(self):
         """Initialise la base de données en exécutant le schéma et les données initiales."""
+        # Vérifie si la BD existe déjà
+        db_exists = Path(self.path).exists()
+        
         # Se connecte à la base de données (crée le fichier s'il n'existe pas)
         with sqlite3.connect(self.path) as con:
-            # Exécute le fichier de schéma pour créer les tables
+            # Exécute TOUJOURS le schéma (CREATE TABLE IF NOT EXISTS)
             con.executescript(SCHEMA.read_text(encoding='utf-8'))
-            # Exécute le fichier de données initiales pour peupler les tables
-            con.executescript(SEED.read_text(encoding='utf-8'))
+            
+            # N'exécute le seed QUE si la BD est nouvelle
+            if not db_exists:
+                con.executescript(SEED.read_text(encoding='utf-8'))
 
             # Vérifie si la table 'users' existe; si non, on la crée proprement
             cur = con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
@@ -78,6 +83,7 @@ class Database:
                 else:
                     con.execute("ALTER TABLE users ADD COLUMN username TEXT NOT NULL DEFAULT ''")
 
+            con.commit()
             con.commit()
 
     def connect(self):
