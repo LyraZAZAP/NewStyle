@@ -186,13 +186,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
         
                 # --- Affichage avatar + pseudo en haut à gauche ---
-        badge_x, badge_y = 20, 20
-
-        # petit fond semi transparent pour lisibilité
-        bg_w, bg_h = 170, 110 # taille du badge (avatar + pseudo)
-        bg = pg.Surface((bg_w, bg_h), pg.SRCALPHA)
-        bg.fill((255, 255, 255, 180))
-        screen.blit(bg, (badge_x - 10, badge_y - 10))
+        badge_x, badge_y = 20, 20  # position du badge (avatar + pseudo)
 
         if self.avatar_surf:
             screen.blit(self.avatar_surf, (badge_x, badge_y))

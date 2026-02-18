@@ -93,10 +93,10 @@ class MusicDiscWidget:
             return (m + r, m + r)
         if self.anchor == "topright":
             return (w - m - r, m + r)
-        if self.anchor == "bottomleft":
-            return (m + r, h - m - r)
-        # bottomright par défaut
-        return (w - m - r, h - m - r)
+        if self.anchor == "bottomright":
+            return (w - m - r, h - m - r)
+        # bottomleft par défaut
+        return (m + r, h - m - r) 
 
     def on_resize(self):
         """Recalcule la position si la fenêtre est redimensionnée."""
@@ -128,16 +128,16 @@ class MusicDiscWidget:
         dist = dir_vec.length()
 
         if dist > 0:
-            influence = max(0.0, 1.0 - (dist / float(self.influence_radius)))
+            influence = max(0.5, 0.5 - (dist / float(self.influence_radius)))
             if influence > 0:
-                offset = dir_vec.normalize() * (influence * self.max_offset)
+                offset = dir_vec.normalize() * (influence * self.max_offset) # Offset vers la souris (parallax inverse)
             else:
-                offset = pg.Vector2(0, 0)
+                offset = pg.Vector2(0, 0) # Pas d'effet si hors de portée
         else:
-            offset = pg.Vector2(0, 0)
+            offset = pg.Vector2(0, 0) # Pas d'effet si la souris est exactement au centre (évite division par zéro)
 
         # Centre de rendu tenant compte du parallax (le disque "s'approche" de la souris)
-        render_center = self.center + offset
+        render_center = self.center + offset - 1.5 * offset  # Ajuste pour que le disque "s'éloigne" légèrement de la souris (parallax inverse)
 
         # Disque tournant : applique une rotation à l'image
         rotated = pg.transform.rotozoom(self.disc_base, -self.angle, 1.0)
