@@ -1,11 +1,11 @@
-# 🎮 NewStyle - Jeu de Dressing
+# NewStyle - Jeu de Dressing
 
 ## Qu'est-ce que c'est ?
 Un jeu Pygame où les joueurs **créent un compte**, **se connectent** et **habillent un mannequin** selon un thème pour obtenir un score.
 
 ---
 
-## 📂 Comment est organisé le projet ?
+## Comment est organisé le projet ?
 
 ### Structure simple
 ```
@@ -46,7 +46,7 @@ NewStyle/
 
 ---
 
-## 🎯 Flux du jeu (ce qui se passe)
+## Flux du jeu (ce qui se passe)
 
 ```
 1. LANCEMENT
@@ -77,7 +77,7 @@ NewStyle/
 
 ---
 
-## 🔐 Base de données
+## Base de données
 
 ### Table `users` (utilisateurs)
 ```
@@ -100,7 +100,7 @@ score_theme → Thème bonus ("casual", "soiree"...)
 
 ---
 
-## 🕹️ Comment jouer
+## Comment jouer
 
 1. **Lancer le jeu**
    ```bash
@@ -129,7 +129,7 @@ score_theme → Thème bonus ("casual", "soiree"...)
 
 ---
 
-## 🔑 Concepts clés
+## Concepts clés
 
 ### Pattern Repository
 Les fichiers `repositories.py` isolent l'accès à la base de données :
@@ -161,7 +161,7 @@ L'ordre de superposition des vêtements :
 
 ---
 
-## 💾 Technologie
+## Technologie
 
 - **Python 3.11+**
 - **Pygame 2.6** - Rendu graphique
@@ -170,7 +170,7 @@ L'ordre de superposition des vêtements :
 
 ---
 
-## 📖 Lire le code dans cet ordre
+## Lire le code dans cet ordre
 
 Pour comprendre le projet facilement :
 
@@ -192,7 +192,7 @@ Pour comprendre le projet facilement :
 
 ---
 
-## ⚡ Raccourcis clavier
+## Raccourcis clavier
 
 - **F11** ou **Alt+Enter** : Plein écran
 - **TAB** : Passer au champ suivant (login/register)
@@ -203,16 +203,16 @@ Pour comprendre le projet facilement :
 
 ---
 
-## 📝 Tous les fichiers Python sont commentés
+## Tous les fichiers Python sont commentés
 
-✅ **Chaque ligne a son commentaire** pour expliquer :
+**Chaque ligne a son commentaire** pour expliquer :
 - Les imports
 - Les variables
 - Les fonctions
 - La logique
 
-👉 Voir le fichier `STRUCTURE_COMMENTÉE.md` pour un guide détaillé !
+ ## PARALLAX AIDE 
 
----
-
-**Bon jeu ! 🎮✨**
+- self.bg_img = pg.image.load(MENU_BG_PATH) 
+- self.bg_img = self.bg_img.convert() if self.bg_img.get_alpha() is None else self.bg_img.convert_alpha() 
+- self.parallax = 25
