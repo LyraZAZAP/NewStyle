@@ -43,9 +43,8 @@ class LoginScene(Scene):
             ok, msg, user = DB.authenticate(self.username, self.password)
             self.message = msg
             if ok and user:
-                self.game.current_user_id = user.get("id")
-                self.game.current_username = user.get("display_name")
-                self.game.current_avatar = user.get("avatar_path")
+                # Stocke l'utilisateur complet dans une clé unique pour l'application
+                self.game.current_user = user
                 self.game.goto_menu()
 
         def do_register():
@@ -135,9 +134,7 @@ class LoginScene(Scene):
                 ok, msg, user = DB.authenticate(self.username, self.password)
                 self.message = msg
                 if ok and user:
-                    self.game.current_user_id = user.get("id")
-                    self.game.current_username = user.get("display_name")
-                    self.game.current_avatar = user.get("avatar_path")
+                    self.game.current_user = user
                     self.game.goto_menu()
                     
                 return
