@@ -77,9 +77,8 @@ class RegisterScene(Scene):
                 # BASE DE DONNÉES : authentifier automatiquement l'utilisateur qu'on vient de créer
                 ok2, msg2, user = DB.authenticate(username_val, password_val)
                 if ok2 and user:
-                    self.game.current_user_id = user.get("id")
-                    self.game.current_username = user.get("display_name")
-                    self.game.current_avatar = user.get("avatar_path")
+                    # Stocke l'utilisateur complet dans une clé unique pour l'application
+                    self.game.current_user = user
                     self.game.goto_menu()
                 else:
                     self.message = msg2
