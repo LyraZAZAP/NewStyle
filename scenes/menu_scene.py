@@ -59,12 +59,11 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         super().__init__(game)  # conserve la référence au jeu
         self.title_font = pg.font.SysFont(None, 70)  # police grande pour le titre
         self.buttons = []  # liste des boutons interactifs du menu
-        self.bg_offset = pg.Vector2(0, 0) # pour l'effet de parallaxe du fond d'écran que ça tremble pas
-        # --- Callback pour le bouton "Nouvelle partie" ---
+        # --- Callback pour le bouton "Play" ---
         def start_random():
             """
-            Démarre une nouvelle partie avec un thème et un mannequin choisis aléatoirement.
-            Appelé lors du clic sur le bouton "Nouvelle partie".
+            Démarre l'histoire en choisissant un thème et un mannequin aléatoires.
+            Appelé lors du clic sur le bouton "Play".
             """
             theme = random.choice(THEMES)  # choisit un thème au hasard dans la liste
             mannequins = MannequinRepo.all()  # récupère tous les mannequins de la BDD
@@ -73,11 +72,11 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
             default_mannequin = Mannequin(0, 'Lina', 'assets/mannequins/mannequin_base.png')
             m = random.choice(mannequins) if mannequins else default_mannequin
             
-            # Transition vers la scène d'habillage avec le mannequin et thème sélectionnés
-            self.game.goto_dress(m, theme)
+            # Transition vers la scène visual novel avant l'habillage
+            self.game.goto_story(m, theme)
 
-        # Création du bouton "Nouvelle partie" (position, texte, callback)
-        self.buttons.append(Button((412, 320, 200, 50), "Nouvelle partie", start_random))
+        # Création du bouton "Play" (position, texte, callback)
+        self.buttons.append(Button((412, 320, 200, 50), "Play", start_random))
 
         # --- Bouton "Quitter" ---
         def quit_game():
@@ -117,18 +116,6 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         # --- Chargement du fond d'écran ---
         # Charge l'image ou utilise une couleur unie par défaut si l'image n'existe pas
         self.bg = _load_background(MENU_BG_PATH, (self.game.w, self.game.h))
-        
-                # Fond parallax (image + grande que l'écran)
-        self.bg_img = pg.image.load(MENU_BG_PATH)
-        self.bg_img = self.bg_img.convert() if self.bg_img.get_alpha() is None else self.bg_img.convert_alpha()
-
-        # on la rend un peu plus grande que la fenêtre (ex: +8%)
-        scale = 1.08
-        bw, bh = int(self.game.w * scale), int(self.game.h * scale)
-        self.bg_scaled = pg.transform.smoothscale(self.bg_img, (bw, bh))
-
-        # intensité du mouvement (en pixels max)
-        self.parallax = 25
         
         # === CHARGEMENT DE L'IMAGE DU TITRE ===
         # Charge et redimensionne l'image du titre depuis assets/titles/
@@ -171,23 +158,8 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
         Args:
             screen surface principale du jeu
         """
-        # --- Fond d'écran effet paralaxe ---
-        mx, my = pg.mouse.get_pos()
-
-        # centre de la fenêtre (0..w, 0..h) -> (-1..1)
-        nx = (mx / self.game.w) * 2 - 1
-        ny = (my / self.game.h) * 2 - 1
-
-        # Décalage max = self.parallax
-        dx = int(-nx * self.parallax)
-        dy = int(-ny * self.parallax)
-
-        # on centre l'image et on applique le décalage
-        bw, bh = self.bg_scaled.get_size()
-        x = (self.game.w - bw) // 2 + dx
-        y = (self.game.h - bh) // 2 + dy
-
-        screen.blit(self.bg_scaled, (x, y))
+        # --- Fond d'écran ---
+        screen.blit(self.bg, (0, 0))
         
         self.music_disc.draw(screen)
 
