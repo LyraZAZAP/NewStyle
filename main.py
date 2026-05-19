@@ -18,6 +18,7 @@ from scenes.dress_scene import DressScene  # Écran habillage (principal)
 from scenes.result_scene import ResultScene  # Écran résultat final
 from scenes.login_scene import LoginScene  # Écran login
 from scenes.register_scene import RegisterScene  # Écran inscription
+from scenes.story_scene import StoryScene  # Écran visual novel d'introduction
 
 # === IMPORTS AUTRES ===
 from db import DB  # Base de données
@@ -83,6 +84,10 @@ class Game:
             # Menu principal après connexion
             self.scene = MenuScene(self)
 
+        elif name == "story":
+            mannequin, theme = args
+            self.scene = StoryScene(self, mannequin, theme)
+
         elif name == "dress":
             mannequin, theme = args
             self.scene = DressScene(self, mannequin, theme)
@@ -105,6 +110,9 @@ class Game:
 
     def goto_register(self):
         self.set_scene("register")
+
+    def goto_story(self, mannequin, theme):
+        self.set_scene("story", mannequin, theme)
 
     def goto_dress(self, mannequin, theme):
         self.set_scene("dress", mannequin, theme)
