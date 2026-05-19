@@ -38,16 +38,21 @@ class MenuScene(Scene):
         self.title_font = pg.font.SysFont(None, 70)
         self.font_small = pg.font.SysFont(None, 30)
 
-        def start_random():
-            theme      = random.choice(THEMES)
+        def _pick_mannequin():
             mannequins = MannequinRepo.all()
             default    = Mannequin(0, 'Lina', 'assets/mannequins/mannequin_base.png')
-            m          = random.choice(mannequins) if mannequins else default
-            self.game.goto_story(m, theme)
+            return random.choice(mannequins) if mannequins else default
+
+        def start_random():
+            self.game.goto_story(_pick_mannequin(), random.choice(THEMES))
+
+        def start_arcade():
+            self.game.goto_wheel(_pick_mannequin())
 
         self.buttons = [
-            Button((412, 320, 200, 50), "Play",    start_random),
-            Button((412, 390, 200, 50), "Quitter", lambda: setattr(self.game, 'running', False)),
+            Button((412, 290, 200, 50), "Play",    start_random),
+            Button((412, 355, 200, 50), "Arcade",  start_arcade),
+            Button((412, 420, 200, 50), "Quitter", lambda: setattr(self.game, 'running', False)),
         ]
 
         # Bouton plein écran (coin supérieur droit)
