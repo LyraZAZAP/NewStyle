@@ -82,11 +82,11 @@ class Game:
         self.cached_avatar = None
         self.set_scene("login")
 
-    def goto_register(self):         self.set_scene("register")
-    def goto_menu(self):             self.set_scene("menu")
-    def goto_story(self, m, t):      self.set_scene("story", m, t)
+    def goto_register(self):    self.set_scene("register")
+    def goto_menu(self):        self.set_scene("menu")
+    def goto_story(self, m, t, phase=0): self.set_scene("story", m, t, phase)
     def goto_wheel(self, m):         self.set_scene("wheel", m)
-    def goto_dress(self, m, t):      self.set_scene("dress", m, t)
+    def goto_dress(self, m, t): self.set_scene("dress", m, t)
 
     def goto_result(self, mannequin, theme, outfit, worn_garments):
         self.set_scene("result", mannequin, theme, outfit, worn_garments)

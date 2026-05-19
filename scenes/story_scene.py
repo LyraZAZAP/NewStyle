@@ -22,25 +22,35 @@ def _load_image(path, size=None, fallback_color=(220, 220, 240)):
 class StoryScene(Scene):
     """Scène simple : fond, personnage et barre de texte narrative."""
 
-    def __init__(self, game, mannequin, theme):
+    def __init__(self, game, mannequin, theme, phase=0):
         super().__init__(game)
         self.mannequin= mannequin
         self.theme= theme
+        self.phase= phase
         self.player_dialogues = [  # dialogues du joueur (narrateur)
             "Tu viens d'entrer en école de styliste, après le bac de JUSTESSE ",
             "Une seule règle, soit stylé",
             "En marchant vers ton école, tu vois beaucoup d'élèves, tous habillés de façon très originaux. Tu remarques, emo.. scene.. goth.. classic.. lolita.. etc etc",
             "YO FAT FUCK T'A COGNÉ QUELQU'UN",
         ]
-        
+
         self.dialogue_index = 0  # index dans player_dialogues
         self.juliette_dialogue_index = 0  # index dans juliette_dialogues
- 
-        self.juliette_dialogues = [  # dialogues de Juliette : (texte, clé image)
+
+        juliette_dialogues_p0 = [  # dialogues de Juliette phase 0 : (texte, clé image)
             ("OPA! Mais vro regarde", "confused_talking"),
             ("AHHHH t'es nouvelle nn???", "mouth_closed"),
             ("Va falloir une outfit là psq tu ressemble à un bourgignon sorti d'une cocotte minute", "smile"),
         ]
+
+        juliette_dialogues_p1 = [  # dialogues de Juliette phase 1 (après le dress challenge)
+            ("Alors alors... t'as fait un effort je vois!", "smile"),
+            ("C'est... comment dire... un début hein", "confused_talking"),
+            ("Bon je vais pas te mentir, t'as encore beaucoup à apprendre", "mouth_closed"),
+            ("Mais hey, c'est pour ça qu'on est là! Bienvenue officiellement à l'école!", "smile"),
+        ]
+
+        self.juliette_dialogues = juliette_dialogues_p1 if phase == 1 else juliette_dialogues_p0
 
         self.background   = _load_image("assets/backgrounds/school.png", (self.game.w, self.game.h), fallback_color=(180, 200, 240))
         raw_bar = _load_image("assets/bar/bar_text_purple.png")  # charger la barre sans redimensionnement
@@ -66,7 +76,11 @@ class StoryScene(Scene):
         self.prompt_font = pg.font.SysFont("Comic Sans MS", 24)  # police pour le prompt
         
 
-        self.juliette_visible= False
+        if phase == 1:
+            self.juliette_visible = True
+            self.juliette_image = self.juliette_images[self.juliette_dialogues[0][1]]
+        else:
+            self.juliette_visible = False
         self.shake_timer= 0.0
         self.shake_duration= 0.4  # secondes
         self.shake_intensity= 8    # pixels
@@ -81,6 +95,7 @@ class StoryScene(Scene):
 
         if advance and self.shake_timer <= 0.0:
             self._next_dialogue()
+
         
     def update(self, dt):
         if self.shake_timer > 0.0:
@@ -154,7 +169,10 @@ class StoryScene(Scene):
                 img_key = self.juliette_dialogues[self.juliette_dialogue_index][1]
                 self.juliette_image = self.juliette_images[img_key]
             else:
-                self.game.goto_dress(self.mannequin, self.theme)
+                if self.phase == 1:
+                    self.game.goto_menu()
+                else:
+                    self.game.goto_dress(self.mannequin, self.theme)
         else:
             if self.dialogue_index < len(self.player_dialogues) - 1:
                 self.dialogue_index += 1
@@ -164,3 +182,4 @@ class StoryScene(Scene):
                 self.shake_timer = self.shake_duration
                 img_key = self.juliette_dialogues[0][1]
                 self.juliette_image = self.juliette_images[img_key]
+                

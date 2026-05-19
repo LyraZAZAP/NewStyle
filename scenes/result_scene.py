@@ -65,8 +65,11 @@ class ResultScene(Scene):
         return 2
 
     def handle_event(self, event):
-        if event.type == pg.KEYDOWN and event.key in (pg.K_r, pg.K_n):
-            self.game.goto_menu()
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_r:
+                self.game.goto_menu()
+            elif event.key == pg.K_e:
+                self.game.goto_story(self.mannequin, (self.theme_code, self.theme_label), phase=1)
 
     def update(self, dt):
         pass  # écran statique, aucune logique à mettre à jour
@@ -82,7 +85,8 @@ class ResultScene(Scene):
             (self.font,       f"Résultat — thème {self.theme_label}", (255,255,255), (20, 20)),
             (self.small_font, f"Score: {self.score}",                 (50, 50, 80),  (20, 80)),
             (self.small_font, f"Argent gagné: {self.money}",          (30, 30, 60),  (40, 160)),
-            (self.small_font, "R = Retour menu",                      (60, 60, 80),  (40, 220)),
+            (self.small_font, "R = Retour au menu",                    (60, 60, 80),  (40, 220)),
+            (self.small_font, "E = Continuer l'histoire",              (60, 60, 80),  (40, 260)),
         ]
         for font, text, color, pos in items:
             surf    = font.render(text, True, color)
