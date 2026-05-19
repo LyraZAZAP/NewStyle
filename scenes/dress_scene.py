@@ -307,20 +307,24 @@ class DressScene(Scene):
         self._draw_worn_items(screen)
         self._draw_scrollbar(screen)
         self._draw_hint(screen)
+        self._draw_dragged_items(screen)  # toujours au-dessus de tout
 
     def _draw_sidebar(self, screen):
         screen.blit(self.sidebar_bg, self.sidebar.topleft)
 
     def _draw_gallery_items(self, screen):
         for it in self.gallery_items:
-            if isinstance(it, Draggable) and it.garment.id not in self.worn_items:
-                if it.grab:
-                    screen.blit(it.image, it.pos)
-                else:
-                    draw_y = it.base_pos.y - self.scroll_y
-                    # N'affiche que les items dans la zone galerie (sous les boutons)
-                    if self.gallery_top <= draw_y < self.sidebar.height:
-                        screen.blit(it.image, (it.base_pos.x, draw_y))
+            if isinstance(it, Draggable) and it.garment.id not in self.worn_items and not it.grab:
+                draw_y = it.base_pos.y - self.scroll_y
+                # N'affiche que les items dans la zone galerie (sous les boutons)
+                if self.gallery_top <= draw_y < self.sidebar.height:
+                    screen.blit(it.image, (it.base_pos.x, draw_y))
+
+    def _draw_dragged_items(self, screen):
+        """Dessine les items en cours de drag par-dessus tout le reste."""
+        for it in self.gallery_items:
+            if isinstance(it, Draggable) and it.grab:
+                screen.blit(it.image, it.pos)
 
     def _draw_stage(self, screen):
         screen.blit(self.stage_bg,      self.stage.topleft)

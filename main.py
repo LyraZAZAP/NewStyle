@@ -22,6 +22,7 @@ from scenes.story_scene    import StoryScene
 from db                    import DB
 from audio_manager         import AudioManager
 from repositories          import UserRepo
+from ui.widgets            import VolumeWidget
 
 
 class Game:
@@ -43,6 +44,9 @@ class Game:
         self.current_username = None
         self.current_avatar   = None
         self.cached_avatar    = None  # cache pour éviter de recharger l'image à chaque frame
+
+        self.volume_widget = VolumeWidget(self.audio)
+        self.volume_widget.place(self.w, self.h)
 
         self.scene = None
         self.set_scene("login")
@@ -129,13 +133,14 @@ class Game:
                     or (event.key == pg.K_RETURN and (event.mod & pg.KMOD_ALT))
                 ):
                     self.toggle_fullscreen()
-                elif self.scene:
+                elif not self.volume_widget.handle_event(event) and self.scene:
                     self.scene.handle_event(event)
 
             if self.scene:
                 self.scene.update(dt)
                 self.scene.draw(self.screen)
             self._draw_avatar()
+            self.volume_widget.draw(self.screen)
             pg.display.flip()
 
         self._cleanup()
