@@ -71,9 +71,6 @@ INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, pric
 VALUES ('pantalon vert rose punk', (SELECT id FROM category WHERE name='bottom'), 'assets/clothes/bottoms/bottom7.png', 'colorful', 15);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
-VALUES ('pantalon vert bonbon', (SELECT id FROM category WHERE name='bottom'), 'assets/clothes/bottoms/bottom8.png', 'soiree', 15);
-
-INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
 VALUES ('jupe bleu jaune', (SELECT id FROM category WHERE name='bottom'), 'assets/clothes/bottoms/bottom9.png', 'colorful', 15);
 
 INSERT OR IGNORE INTO garment (name, category_id, sprite_path, score_theme, price)
