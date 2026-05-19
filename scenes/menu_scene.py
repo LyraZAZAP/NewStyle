@@ -57,7 +57,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
             game (Game): Référence à l'objet jeu principal
         """
         super().__init__(game)  # conserve la référence au jeu
-        self.title_font = pg.font.SysFont(None, 70)  # police grande pour le titre
+        self.title_font = pg.font.SysFont("Comic Sans MS", 70)  # police grande pour le titre
         self.buttons = []  # liste des boutons interactifs du menu
         # --- Callback pour le bouton "Play" ---
         def start_random():
@@ -87,7 +87,7 @@ class MenuScene(Scene):  # Écran d'accueil / menu principal
 
         # --- Bouton toggle plein écran (coin supérieur droit) ---
         self.fullscreen_btn = pg.Rect(self.game.w - 120, 10, 110, 40)  # rectangle cliquable
-        self.font_small = pg.font.SysFont(None, 30)  # petite police pour le texte du bouton
+        self.font_small = pg.font.SysFont("Comic Sans MS", 30)  # petite police pour le texte du bouton
         
                 # --- Badge utilisateur (avatar + pseudo) ---
         self.avatar_surf = None

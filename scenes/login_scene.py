@@ -15,8 +15,8 @@ class LoginScene(Scene):
     
     def __init__(self, game):
         super().__init__(game)
-        self.title_font = pg.font.SysFont(None, 56)
-        self.font = pg.font.SysFont(None, 28)
+        self.title_font = pg.font.SysFont("Comic Sans MS", 56)
+        self.font = pg.font.SysFont("Comic Sans MS", 28)
         # charge le background spécifique au login (assets/backgrounds/login.png)
         try:
             self.bg = pg.image.load("assets/backgrounds/login.png")

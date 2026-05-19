@@ -24,25 +24,42 @@ class StoryScene(Scene):  # définition de la scène visual novel
         super().__init__(game)  # appeler le constructeur de Scene
         self.mannequin = mannequin  # stocker le mannequin sélectionné
         self.theme = theme  # stocker le thème choisi
-        self.dialogue_index = 0  # index du dialogue affiché
-
-        self.dialogues = [  # liste des lignes de dialogue
-            f"Tu viens d'enter en école de styliste, après le bac ( de JUSTESSE )",  #ta propre pensée
-            f"Une seule règle, soit stylé",  
-            "En marchant vers ton école, tu vois beaucoup d'élèves, tous habillé de façon très orignaux.",  
-            "Tu remarques, emo.. scene.. goth.. classic.. lolita.. etc etc"  
+        self.player_dialogues = [  # dialogues du joueur (narrateur)
+            "Tu viens d'entrer en école de styliste, après le bac ( de JUSTESSE )",
+            "Une seule règle, soit stylé",
+            "En marchant vers ton école, tu vois beaucoup d'élèves, tous habillés de façon très originaux. Tu remarques, emo.. scene.. goth.. classic.. lolita.. etc etc",
+            "DUMBASS T'A COGNÉ QUELQU'UN",
         ]
 
-        self.background = _load_image("assets/backgrounds/school.png", (self.game.w, self.game.h), fallback_color=(180, 200, 240))  # charger le fond d'école
-        self.bar_image = _load_image("assets/bar/bar_text_purple.png")  # charger l'image de la barre de texte à sa taille native
-        self.bar_rect = self.bar_image.get_rect(midbottom=(self.game.w // 2, self.game.h - 5))  # positionner la barre au ras du bord bas
-        self.text_area_rect = pg.Rect(self.bar_rect.left + 40, self.bar_rect.top + 80, self.bar_rect.width - 80, self.bar_rect.height - 95)  # zone de texte plus basse dans la barre
-        self.juliette_image = _load_image("assets/characteres/juliette_mouth_closed.png", size=(int(self.game.h * 0.84), int(self.game.h * 0.84)))  # charger l'image de Juliette
-        self.juliette_rect = self.juliette_image.get_rect(midbottom=(self.game.w // 2, self.game.h - 40))  # placer Juliette derrière la barre
+        self.juliette_dialogues = [  # dialogues de Juliette : (texte, clé image)
+            ("OPA! Mais vro regarde", "confused_talking"),
+            ("AHHHH t'es nouvelle nn???", "mouth_closed"),
+            ("Va falloir une outfit là psq tu ressemble à un ", "smile"),
+        ]
 
-        self.title_font = pg.font.SysFont(None, 42)  # police pour le titre
-        self.text_font = pg.font.SysFont(None, 32)  # police pour le dialogue
-        self.prompt_font = pg.font.SysFont(None, 24)  # police pour le prompt
+        self.dialogue_index = 0  # index dans player_dialogues
+        self.juliette_dialogue_index = 0  # index dans juliette_dialogues
+
+        self.background = _load_image("assets/backgrounds/school.png", (self.game.w, self.game.h), fallback_color=(180, 200, 240))  # charger le fond d'école
+        raw_bar = _load_image("assets/bar/bar_text_purple.png")  # charger la barre sans redimensionnement
+        nat_w, nat_h = raw_bar.get_size()  # récupérer les dimensions naturelles
+        bar_w = self.game.w - 20  # largeur cible : presque tout l'écran
+        bar_h = int(nat_h * bar_w / nat_w)  # hauteur calculée pour conserver le ratio
+        self.bar_image = pg.transform.smoothscale(raw_bar, (bar_w, bar_h))  # redimensionner en conservant les proportions
+        self.bar_rect = self.bar_image.get_rect(midbottom=(self.game.w // 2, self.game.h - 5))  # positionner la barre au ras du bord bas
+        self.text_area_rect = pg.Rect(self.bar_rect.left + 40, self.bar_rect.top + 90, self.bar_rect.width - 80, self.bar_rect.height - 100)  # zone de texte dans la barre, décalée vers le bas
+        char_size = (int(self.game.h * 0.84), int(self.game.h * 0.84))
+        self.juliette_images = {  # toutes les expressions de Juliette
+            "mouth_closed":     _load_image("assets/characteres/juliette_mouth_closed.png",     size=char_size),
+            "smile":            _load_image("assets/characteres/juliette_smile.png",            size=char_size),
+            "confused_talking": _load_image("assets/characteres/juliette_confused_talking.png", size=char_size),
+        }
+        self.juliette_image = self.juliette_images["mouth_closed"]  # image affichée actuellement
+        self.juliette_rect = self.juliette_image.get_rect(midbottom=(self.game.w // 2, self.game.h - 40))
+
+        self.title_font = pg.font.SysFont("Comic Sans MS", 42)  # police pour le titre
+        self.text_font = pg.font.SysFont("Comic Sans MS", 32)  # police pour le dialogue
+        self.prompt_font = pg.font.SysFont("Comic Sans MS", 24)  # police pour le prompt
 
         self.text_bar_height = self.bar_rect.height  # hauteur de la barre de texte calculée à partir de l'image
         self.text_bar_rect = pg.Rect(self.bar_rect.left, self.bar_rect.top, self.bar_rect.width, self.bar_rect.height)  # rectangle de la barre de dialogue
@@ -52,17 +69,15 @@ class StoryScene(Scene):  # définition de la scène visual novel
         self.shake_intensity = 8  # intensité du tremblement en pixels
 
     def handle_event(self, event):  # gestion des événements
-        """Avance le dialogue ou quitte la scène après le tremblement de Juliette."""
-        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:  # clic gauche
-            if self.juliette_visible and self.shake_timer <= 0.0:  # si Juliette est visible et le tremblement fini
-                self.game.goto_dress(self.mannequin, self.theme)  # aller à la scène d'habillage
-            else:
-                self._next_dialogue()  # sinon passer au dialogue suivant
-        elif event.type == pg.KEYDOWN and event.key in (pg.K_RETURN, pg.K_SPACE):  # touche Entrée ou Espace
-            if self.juliette_visible and self.shake_timer <= 0.0:
-                self.game.goto_dress(self.mannequin, self.theme)
-            else:
-                self._next_dialogue()  # passer au dialogue suivant
+        """Avance le dialogue ou quitte la scène après le dernier dialogue de Juliette."""
+        advance = False
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            advance = True
+        elif event.type == pg.KEYDOWN and event.key in (pg.K_RETURN, pg.K_SPACE):
+            advance = True
+
+        if advance and self.shake_timer <= 0.0:
+            self._next_dialogue()
 
     def update(self, dt):  # mise à jour par frame
         """Met à jour le tremblement de l'écran si Juliette vient d'apparaître."""
@@ -88,25 +103,60 @@ class StoryScene(Scene):  # définition de la scène visual novel
         bar_rect = self.bar_rect.move(shake_x, shake_y)
         screen.blit(self.bar_image, bar_rect)  # dessiner la barre d'UI graphique
 
-        title = self.title_font.render("toi", True, (255, 255, 255))  # rendre le titre de l'écran
-        screen.blit(title, (bar_rect.left + 30, bar_rect.top + 18))  # dessiner le titre dans la barre
+        # Nom du locuteur : "toi" pendant les dialogues du joueur, "juliette" ensuite
+        speaker_name = "juliette" if self.juliette_visible else "toi"
+        title = self.title_font.render(speaker_name, True, (255, 255, 255))
+        screen.blit(title, (bar_rect.left + 30, bar_rect.top + 18))
 
-        message = self.dialogues[self.dialogue_index]  # récupérer la ligne de dialogue actuelle
-        text = self.text_font.render(message, True, (245, 245, 245))  # rendre le texte du dialogue
-        screen.blit(text, (bar_rect.left + 40, bar_rect.top + 80))  # afficher le dialogue plus bas dans la barre
+        # Texte courant selon la phase
+        if self.juliette_visible:
+            message = self.juliette_dialogues[self.juliette_dialogue_index][0]
+        else:
+            message = self.player_dialogues[self.dialogue_index]
+        wrapped = self._wrap_text(message, self.text_font, self.bar_rect.width - 80)  # découper le texte en lignes selon la largeur disponible
+        line_y = bar_rect.top + 90  # position Y de départ du texte, plus bas dans la barre
+        for line in wrapped:  # dessiner chaque ligne de texte une par une
+            text = self.text_font.render(line, True, (245, 245, 245))
+            screen.blit(text, (bar_rect.left + 40, line_y))
+            line_y += self.text_font.get_linesize()
 
         prompt = self.prompt_font.render("Cliquez ou appuyez sur Entrée pour continuer", True, (200, 200, 220))  # rendre le prompt d'action
         prompt_rect = prompt.get_rect()  # obtenir le rectangle du prompt
         prompt_rect.bottomright = (bar_rect.right - 20, bar_rect.bottom - 15)  # aligner le prompt dans la barre
         screen.blit(prompt, prompt_rect)  # dessiner le prompt
 
-    def _next_dialogue(self):  # méthode interne pour avancer dans le dialogue
-        """Avance le dialogue ou affiche Juliette quand le texte est terminé."""
-        if self.juliette_visible:  # si Juliette est déjà visible, on attend un clic pour changer de scène
-            return
+    def _wrap_text(self, text, font, max_width):
+        """Découpe un texte long en plusieurs lignes pour qu'il tienne dans max_width pixels."""
+        words = text.split()  # séparer le texte en mots individuels
+        lines, current = [], []  # lines = lignes finies, current = mots de la ligne en cours
+        for word in words:  # parcourir chaque mot
+            test = ' '.join(current + [word])  # tester si le mot courant rentre sur la ligne
+            if font.size(test)[0] <= max_width:  # si la ligne reste dans la largeur autorisée
+                current.append(word)  # ajouter le mot à la ligne en cours
+            else:
+                if current:  # si la ligne en cours n'est pas vide
+                    lines.append(' '.join(current))  # valider la ligne et la sauvegarder
+                current = [word]  # recommencer une nouvelle ligne avec le mot débordant
+        if current:  # ajouter la dernière ligne si elle n'est pas vide
+            lines.append(' '.join(current))
+        return lines  # retourner la liste de toutes les lignes
 
-        if self.dialogue_index < len(self.dialogues) - 1:  # si il reste encore des textes à afficher
-            self.dialogue_index += 1  # passer à la ligne suivante
+    def _next_dialogue(self):
+        """Avance les dialogues du joueur, puis ceux de Juliette, puis change de scène."""
+        if self.juliette_visible:
+            # Avancer dans les dialogues de Juliette
+            if self.juliette_dialogue_index < len(self.juliette_dialogues) - 1:
+                self.juliette_dialogue_index += 1
+                img_key = self.juliette_dialogues[self.juliette_dialogue_index][1]
+                self.juliette_image = self.juliette_images[img_key]
+            else:
+                self.game.goto_dress(self.mannequin, self.theme)
         else:
-            self.juliette_visible = True  # afficher Juliette après le dernier texte
-            self.shake_timer = self.shake_duration  # lancer le tremblement de l'écran
+            if self.dialogue_index < len(self.player_dialogues) - 1:
+                self.dialogue_index += 1
+            else:
+                # Tous les dialogues du joueur sont lus : Juliette apparaît
+                self.juliette_visible = True
+                self.shake_timer = self.shake_duration
+                img_key = self.juliette_dialogues[0][1]
+                self.juliette_image = self.juliette_images[img_key]

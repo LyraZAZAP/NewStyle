@@ -19,8 +19,8 @@ class RegisterScene(Scene):
     
     def __init__(self, game):
         super().__init__(game)
-        self.title_font = pg.font.SysFont(None, 56) # Police pour le titre de la scène
-        self.font = pg.font.SysFont(None, 28) # Police pour les champs et messages
+        self.title_font = pg.font.SysFont("Comic Sans MS", 56) # Police pour le titre de la scène
+        self.font = pg.font.SysFont("Comic Sans MS", 28) # Police pour les champs et messages
 
         # charge le background spécifique à l'inscription (assets/backgrounds/register.png)
         try:
