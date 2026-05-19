@@ -4,10 +4,15 @@
 # ========================================
 
 # === IMPORTS SYSTÈME ===
-import os  # Pour opérations système
-import gc  # Garbage collector (nettoie la mémoire)
-import time  # Pour gérer les délais
-import pygame as pg  # Pygame - bibliothèque de jeu
+import os
+import sys
+import gc
+import time
+import pygame as pg
+
+# Quand lancé depuis un .exe PyInstaller, les assets sont dans le dossier du .exe
+if getattr(sys, 'frozen', False):
+    os.chdir(os.path.dirname(sys.executable))
 
 # === IMPORTS CONFIGURATION ===
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TITLE  # Paramètres du jeu
