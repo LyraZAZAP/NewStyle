@@ -139,6 +139,28 @@ class DressScene(Scene):
         pg.draw.rect(surf, (120, 120, 140), surf.get_rect(), 2)
         return surf
 
+    @staticmethod
+    def _load_thumb(path, max_size=(280, 280)):
+        """Charge une image, rogne le rembourrage transparent, centre dans une surface de taille fixe."""
+        mw, mh = max_size
+        canvas = pg.Surface(max_size, pg.SRCALPHA)
+        if not os.path.exists(path):
+            canvas.fill((200, 200, 210))
+            pg.draw.rect(canvas, (120, 120, 140), canvas.get_rect(), 2)
+            return canvas
+        full = pg.image.load(path).convert_alpha()
+        bboxes = pg.mask.from_surface(full).get_bounding_rects()
+        if not bboxes:
+            return canvas
+        bbox = bboxes[0].unionall(bboxes).clip(full.get_rect())
+        cropped = full.subsurface(bbox).copy()
+        cw, ch = cropped.get_size()
+        scale = min(mw / cw, mh / ch)
+        nw, nh = max(1, int(cw * scale)), max(1, int(ch * scale))
+        scaled = pg.transform.smoothscale(cropped, (nw, nh))
+        canvas.blit(scaled, ((mw - nw) // 2, (mh - nh) // 2))
+        return canvas
+
     # --- Construction de la galerie ---
 
     def _build_gallery(self):
@@ -147,13 +169,16 @@ class DressScene(Scene):
         pad, gap = self.gallery_padding, self.gallery_gap
         tw, th   = self.thumb_size
         cols     = max(1, int(self.gallery_cols))
-        y        = self.gallery_top  # les items commencent sous les boutons de catégorie
+        avail_w  = self.sidebar.width - pad * 2
+        y        = self.gallery_top + pad  # petite marge avant le premier item
 
         active_cats = [c for c in self.categories if c.id == self.active_cat_id]
         for cat in active_cats:
-            x, col = pad, 0
+            col, x = 0, pad
             for g in GarmentRepo.by_category(cat.id):
-                d = Draggable(g, self._safe_load(g.sprite_path, size=(tw, th)), (x, y))
+                thumb = self._load_thumb(g.sprite_path, (tw, th))
+                cx = pad + (avail_w - tw) // 2 if cols == 1 else x
+                d = Draggable(g, thumb, (cx, y))
                 self.gallery_items.append(d)
                 col += 1
                 if col >= cols:
