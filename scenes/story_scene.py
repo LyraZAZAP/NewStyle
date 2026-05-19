@@ -117,38 +117,31 @@ class StoryScene(Scene):
         bar_rect = self.bar_rect.move(shake_x, shake_y)
         screen.blit(self.bar_image, bar_rect)
 
-        # La couleur demandée : 73, 0, 73
-        text_color = (73, 0, 73)
+        shadow_color = (0, 0, 0)
+        shadow_offset = 2
 
-        # 2. Gestion du TITRE (Nom du locuteur)
         speaker_name = "juliette" if self.juliette_visible else "toi"
-        title = self.title_font.render(speaker_name, True, text_color) # <-- Couleur modifiée
-        
-        text_x = bar_rect.left + 40
-        # MODIFICATION ICI : On passe de "+ 15" à "- 20" pour remonter le titre au-dessus/haut de la barre
-        title_y = bar_rect.top - 20 
-        screen.blit(title, (text_x, title_y))
+        text_x = self.game.w // 2 - self.bar_rect.width // 2 + 70 + shake_x
+        title_y = self.game.h - 285 + shake_y
+        screen.blit(self.title_font.render(speaker_name, True, shadow_color), (text_x + 20 + shadow_offset, title_y + shadow_offset))
+        screen.blit(self.title_font.render(speaker_name, True, (255, 255, 255)), (text_x + 20, title_y))
 
-        # 3. Gestion du DIALOGUE
         if self.juliette_visible:
             message = self.juliette_dialogues[self.juliette_dialogue_index][0]
         else:
             message = self.player_dialogues[self.dialogue_index]
-            
-        wrapped = self._wrap_text(message, self.text_font, self.bar_rect.width - 80)
-        
-        # MODIFICATION ICI : On démarre le dialogue plus haut (ex: "+ 25" au lieu du calcul précédent)
-        line_y = bar_rect.top + 25 
-        
+        wrapped = self._wrap_text(message, self.text_font, self.bar_rect.width - 140)
+        line_y = self.game.h - 185 + shake_y
         for line in wrapped:
-            text = self.text_font.render(line, True, text_color) # <-- Couleur modifiée
-            screen.blit(text, (text_x, line_y))
+            screen.blit(self.text_font.render(line, True, shadow_color), (text_x + shadow_offset, line_y + shadow_offset))
+            screen.blit(self.text_font.render(line, True, (245, 245, 245)), (text_x, line_y))
             line_y += self.text_font.get_linesize()
 
-        # 4. Gestion du PROMPT (Instruction de clic)
-        prompt = self.prompt_font.render("Cliquez ou appuyez sur Entrée pour continuer", True, (200, 200, 220))
-        prompt_rect = prompt.get_rect()
-        prompt_rect.bottomright = (bar_rect.right - 20, self.game.h - 15 + shake_y)
+        prompt_text = "Cliquez ou appuyez sur Entrée pour continuer"
+        prompt = self.prompt_font.render(prompt_text, True, (200, 200, 220))
+        prompt_rect = prompt.get_rect(bottomright=(bar_rect.right - 20, self.game.h - 15 + shake_y))
+        screen.blit(self.prompt_font.render(prompt_text, True, shadow_color), prompt_rect.move(shadow_offset, shadow_offset))
+
         screen.blit(prompt, prompt_rect)
 
     def _wrap_text(self, text, font, max_width):

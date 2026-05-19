@@ -32,6 +32,12 @@ class AudioManager:
         self.index = (self.index + 1) % len(self.tracks)
         self.play()
 
+    def prev_track(self):
+        if not self.tracks:
+            return
+        self.index = (self.index - 1) % len(self.tracks)
+        self.play()
+
     def is_playing(self):
         return pg.mixer.music.get_busy() and not self.paused
 
