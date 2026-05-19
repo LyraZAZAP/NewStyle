@@ -22,32 +22,39 @@ class Button:
 
 
 class VolumeWidget:
-    """Curseur de volume horizontal compact — bas-droit de l'écran."""
+    """Curseur de volume + flèches de navigation musicale — bas-droit de l'écran.
 
-    W, H   = 160, 28
-    ICON_W = 22
-    MARGIN = 16
+    Layout : [◀] [♪] [===slider===] [▶]
+    """
+
+    W, H    = 188, 28
+    ARROW_W = 22
+    ICON_W  = 22
+    GAP     = 4
+    MARGIN  = 16
 
     def __init__(self, audio):
         self.audio     = audio
         self._dragging = False
         self._font     = pg.font.SysFont(None, 20)
         self.rect      = pg.Rect(0, 0, self.W, self.H)
-        self.icon_rect = pg.Rect(0, 0, self.ICON_W, self.H)
+        self.prev_rect = pg.Rect(0, 0, self.ARROW_W, self.H)
+        self.icon_rect = pg.Rect(0, 0, self.ICON_W,  self.H)
         self.bar_rect  = pg.Rect(0, 0, 0, 10)
 
     def place(self, screen_w, screen_h):
-        """Positionne le widget juste au-dessus de l'avatar (175 px depuis le bas)."""
         x = screen_w - self.MARGIN - self.W
         y = screen_h - self.MARGIN - self.H
+
         self.rect      = pg.Rect(x, y, self.W, self.H)
-        self.icon_rect = pg.Rect(x, y, self.ICON_W, self.H)
-        self.bar_rect  = pg.Rect(
-            x + self.ICON_W + 6,
-            y + (self.H - 10) // 2,
-            self.W - self.ICON_W - 10,
-            10,
-        )
+        self.prev_rect = pg.Rect(x, y, self.ARROW_W, self.H)
+
+        icon_x = x + self.ARROW_W + self.GAP
+        self.icon_rect = pg.Rect(icon_x, y, self.ICON_W, self.H)
+
+        bar_x = icon_x + self.ICON_W + self.GAP
+        bar_w = self.W - self.ARROW_W - self.GAP - self.ICON_W - self.GAP
+        self.bar_rect  = pg.Rect(bar_x, y + (self.H - 10) // 2, bar_w, 10)
 
     # --- Calculs volume ↔ position ---
 
@@ -65,23 +72,34 @@ class VolumeWidget:
 
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-            hx = self._volume_x()
-            hy = self.bar_rect.centery
-            on_handle = abs(event.pos[0] - hx) <= 8 and abs(event.pos[1] - hy) <= 8
-            if self.bar_rect.collidepoint(event.pos) or on_handle:
-                self._dragging = True
-                self._set_volume(event.pos[0])
-                return True
-        elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
-            if self._dragging:
-                self._dragging = False
-                return True
-        elif event.type == pg.MOUSEMOTION and self._dragging:
+            return self._handle_mouse_down(event.pos)
+        if event.type == pg.MOUSEBUTTONUP and event.button == 1 and self._dragging:
+            self._dragging = False
+            return True
+        if event.type == pg.MOUSEMOTION and self._dragging:
             self._set_volume(event.pos[0])
             return True
         return False
 
+    def _handle_mouse_down(self, pos):
+        if self.prev_rect.collidepoint(pos):
+            self.audio.prev_track()
+            return True
+        hx, hy = self._volume_x(), self.bar_rect.centery
+        on_handle = abs(pos[0] - hx) <= 8 and abs(pos[1] - hy) <= 8
+        if self.bar_rect.collidepoint(pos) or on_handle:
+            self._dragging = True
+            self._set_volume(pos[0])
+            return True
+        return False
+
     # --- Dessin ---
+
+    def _draw_arrow(self, screen, rect, symbol):
+        hovered = rect.collidepoint(pg.mouse.get_pos())
+        fg = (255, 255, 255) if hovered else (180, 180, 200)
+        lbl = self._font.render(symbol, True, fg)
+        screen.blit(lbl, lbl.get_rect(center=rect.center))
 
     def draw(self, screen):
         # Fond semi-transparent arrondi
@@ -89,6 +107,9 @@ class VolumeWidget:
         bg.fill((20, 20, 20, 160))
         screen.blit(bg, self.rect.topleft)
         pg.draw.rect(screen, (90, 90, 100), self.rect, 1, border_radius=6)
+
+        # Flèche piste précédente
+        self._draw_arrow(screen, self.prev_rect, "◀")
 
         # Icône muet / son
         icon = "♪" if self.audio.volume > 0 else "✕"
