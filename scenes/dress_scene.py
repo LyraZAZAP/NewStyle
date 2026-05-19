@@ -6,7 +6,7 @@ from typing import Dict
 from scenes.base_scene import Scene
 from repositories import CategoryRepo, GarmentRepo
 from services import Outfit
-from config import SIDEBAR_BG_PATH, STAGE_BG_PATH
+from config import CATALOGUE_BG_PATH, STAGE_BG_PATH, CAT_BTN_PATH, CAT_BTN_PATHS
 
 SCROLL_SPEED = 40  # pixels par cran de molette
 
@@ -63,7 +63,7 @@ class DressScene(Scene):
         self.sidebar = pg.Rect(0,   0, 320,                self.game.h)
         self.stage   = pg.Rect(320, 0, self.game.w - 320,  self.game.h)
 
-        self.sidebar_bg = _load_background(SIDEBAR_BG_PATH, (self.sidebar.width, self.sidebar.height), (250, 250, 255))
+        self.sidebar_bg = _load_background(CATALOGUE_BG_PATH, (self.sidebar.width, self.sidebar.height), (250, 250, 255))
         self.stage_bg   = _load_background(STAGE_BG_PATH,   (self.stage.width,   self.stage.height),   (235, 240, 250))
 
         self.mannequin_img = self._safe_load(self.mannequin.base_sprite_path, size=(360, 520), fill=(230, 220, 220))
@@ -80,6 +80,18 @@ class DressScene(Scene):
         self.cat_button_rects: Dict[int, pg.Rect] = {}
         self.gallery_top   = 0  # calculé dans _build_cat_buttons()
         self._build_cat_buttons()
+        self.cat_btn_imgs: Dict[int, pg.Surface] = {}
+        for cat in self.categories:
+            path = CAT_BTN_PATHS.get(cat.name.lower(), CAT_BTN_PATH)
+            if os.path.exists(path):
+                raw = pg.image.load(path).convert_alpha()
+                bboxes = pg.mask.from_surface(raw).get_bounding_rects()
+                if bboxes:
+                    bbox = bboxes[0].unionall(bboxes).clip(raw.get_rect())
+                    raw = raw.subsurface(bbox).copy()
+                self.cat_btn_imgs[cat.id] = pg.transform.smoothscale(raw, (self.cat_btn_w, self.cat_btn_h))
+            else:
+                self.cat_btn_imgs[cat.id] = None
 
         self._build_gallery()
         self._clamp_scroll()
@@ -89,9 +101,11 @@ class DressScene(Scene):
     def _build_cat_buttons(self):
         """Calcule les rectangles des boutons de filtre (grille 2 colonnes)."""
         pad   = 10
-        gap   = 6
-        btn_h = 40
+        gap   = 1
         btn_w = (self.sidebar.width - pad * 2 - gap) // 2
+        btn_h = int(btn_w * 2381 / 4047)  # ratio du contenu visible (hors transparence)
+        self.cat_btn_w = btn_w
+        self.cat_btn_h = btn_h
 
         self.cat_button_rects = {}
         for i, cat in enumerate(self.categories):
@@ -121,12 +135,16 @@ class DressScene(Scene):
         for cat in self.categories:
             rect   = self.cat_button_rects[cat.id]
             active = (cat.id == self.active_cat_id)
-            bg     = (10, 104, 255)   if active else (220, 220, 235)
-            fg     = (255, 255, 255)  if active else (40, 40, 80)
-            pg.draw.rect(screen, bg,            rect, border_radius=10)
-            pg.draw.rect(screen, (10, 104, 255), rect, 2, border_radius=10)
-            label = self.cat_btn_font.render(cat.name, True, fg)
-            screen.blit(label, label.get_rect(center=rect.center))
+            btn_img = self.cat_btn_imgs.get(cat.id)
+            if btn_img:
+                screen.blit(btn_img, rect.topleft)
+            else:
+                pg.draw.rect(screen, (220, 220, 235), rect, border_radius=10)
+            if active:
+                overlay = pg.Surface((rect.width, rect.height), pg.SRCALPHA)
+                overlay.fill((10, 104, 255, 80))
+                screen.blit(overlay, rect.topleft)
+                pg.draw.rect(screen, (10, 104, 255), rect, 2, border_radius=10)
 
     # --- Chargement d'images ---
 

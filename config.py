@@ -19,10 +19,24 @@ TITLE            = "Jeu de Dressing"
 BACKGROUND_COLOR = (240, 240, 245)
 
 # Fonds d'écran
-SIDEBAR_BG_PATH = "assets/backgrounds/sidebar_bg.png"
-STAGE_BG_PATH   = "assets/backgrounds/stage_bg.png"
-MENU_BG_PATH    = "assets/backgrounds/menu_bg.png"
-RESULT_BG_PATH  = "assets/backgrounds/stage_bg.png"
+SIDEBAR_BG_PATH   = "assets/backgrounds/sidebar_bg.png"
+CATALOGUE_BG_PATH = "assets/backgrounds/catalogue.png"
+STAGE_BG_PATH     = "assets/backgrounds/stage_bg.png"
+MENU_BG_PATH      = "assets/backgrounds/menu_bg.png"
+RESULT_BG_PATH    = "assets/backgrounds/stage_bg.png"
+
+# Bouton catalogue (fallback générique)
+CAT_BTN_PATH = "assets/ui/bouton_catalogue.png"
+
+# Images des boutons par catégorie (clé = nom de catégorie en minuscules)
+CAT_BTN_PATHS = {
+    "top":       "assets/ui/bouton_top.png",
+    "bottom":    "assets/ui/bouton_bottom.png",
+    "shoes":     "assets/ui/bouton_shoes.png",
+    "accessory": "assets/ui/bouton_accessory.png",
+    "hair":      "assets/ui/bouton_hair.png",
+    "face":      "assets/ui/bouton_face.png",
+}
 
 # Widget disque musical
 DISC_IMG_PATH = "assets/ui/disque.png"
