@@ -1,214 +1,101 @@
-# ========================================
-# SCÈNE DE RÉSULTAT
-# Affiche le score et l'aperçu final après validation de la tenue
-# ========================================
+# Scène de résultat : score et aperçu de la tenue finale
 
-# === IMPORTS ===
-import os  # Pour vérifier l'existence des fichiers
-import pygame as pg  # Pygame pour l'affichage
-from scenes.base_scene import Scene  # Classe de base pour les scènes
-from services import Scoring  # Service de calcul de score
-from config import RESULT_BG_PATH  # Chemin du fond d'écran résultat
+import os
+import pygame as pg
+from scenes.base_scene import Scene
+from services import Scoring
+from config import RESULT_BG_PATH
 
 
 def _load_background(path, size, fallback_color=(240, 240, 250)):
-    """
-    Charge et redimensionne une image de fond, ou retourne une surface unie si le fichier n'existe pas.
-    
-    Args:
-        path (str): Chemin vers l'image de fond
-        size (tuple): Taille cible (largeur, hauteur)
-        fallback_color (tuple): Couleur de repli si l'image n'existe pas
-    
-    Returns:
-        pygame.Surface: Image redimensionnée ou surface unie
-    """
+    """Charge et redimensionne un fond d'écran, ou surface unie si fichier absent."""
     if os.path.exists(path):
         img = pg.image.load(path)
-        # Convertir pour optimiser le rendu (avec ou sans alpha selon l'image)
         img = img.convert() if img.get_alpha() is None else img.convert_alpha()
-        return pg.transform.smoothscale(img, size)  # redimensionnement de qualité
-    # Si l'image n'existe pas, créer une surface unie
+        return pg.transform.smoothscale(img, size)
     surf = pg.Surface(size)
     surf.fill(fallback_color)
     return surf
 
 
-class ResultScene(Scene):  # Écran affichant le résultat après validation de la tenue
+class ResultScene(Scene):
+    """Affiche le score, l'argent gagné et le mannequin habillé."""
+
     def __init__(self, game, mannequin, theme, outfit, worn_garments):
-        """
-        Initialise l'écran de résultat avec le score, l'aperçu final et le fond d'écran.
-        
-        Args:
-            game (Game): Référence à l'objet jeu principal
-            mannequin (Mannequin): Mannequin utilisé dans la partie
-            theme (tuple): (code_theme, libellé_theme) - ex: ("casual", "Casual")
-            outfit (Outfit): Objet tenue contenant la logique métier
-            worn_garments (list): Liste des vêtements portés (objets Garment)
-        """
-        super().__init__(game)  # conserve la référence au jeu
-        self.mannequin = mannequin  # mannequin utilisé
-        self.theme_code, self.theme_label = theme  # décompose le tuple thème
-        self.outfit = outfit  # objet Outfit pour calcul du score
-        self.font = pg.font.SysFont(None, 32)  # police moyenne pour les titres
-        self.small_font = pg.font.SysFont(None, 24)  # petite police pour les détails
+        super().__init__(game)
+        self.mannequin              = mannequin
+        self.theme_code, self.theme_label = theme
+        self.outfit                 = outfit
+        self.font       = pg.font.SysFont(None, 32)
+        self.small_font = pg.font.SysFont(None, 24)
 
-        # --- Zones d'affichage (panneaux gauche et droit) ---
-        self.left_panel = pg.Rect(0, 0, self.game.w // 2, self.game.h)  # moitié gauche (score)
-        self.right_panel = pg.Rect(self.game.w // 2, 0, self.game.w // 2, self.game.h)  # moitié droite (mannequin)
+        self.left_panel  = pg.Rect(0,              0, self.game.w // 2, self.game.h)
+        self.right_panel = pg.Rect(self.game.w // 2, 0, self.game.w // 2, self.game.h)
 
-        # --- Chargement du fond d'écran ---
-        self.bg = _load_background(RESULT_BG_PATH, (self.game.w, self.game.h))
-
-        # --- Chargement du mannequin de base ---
-        # Taille standard du mannequin (360x520px)
+        self.bg           = _load_background(RESULT_BG_PATH, (self.game.w, self.game.h))
         self.mannequin_img = self._safe_load(mannequin.base_sprite_path, size=(360, 520))
 
-        # --- Tri et redimensionnement des vêtements portés ---
-        # Les vêtements sont triés par calque (shoes -> accessories) pour un affichage correct
-        self.worn_garments = []
-        for garment in sorted(worn_garments, key=lambda g: self._layer_for(g)):
-            # Redimensionner chaque vêtement à la taille du mannequin (360x520)
-            img = self._safe_load(garment.sprite_path, size=(360, 520))
-            self.worn_garments.append(img)
+        # Tri par calque pour un affichage cohérent avec DressScene
+        self.worn_garments = [
+            self._safe_load(g.sprite_path, size=(360, 520))
+            for g in sorted(worn_garments, key=self._layer_for)
+        ]
 
-        # --- Calcul du score et de l'argent gagné ---
-        # Utilise le service Scoring pour évaluer la tenue selon le thème
         self.score = Scoring.score(self.theme_code, self.outfit.all_items())
-        # Conversion simple du score en argent (score / 10 * 5)
         self.money = int(self.score / 10) * 5
 
     def _safe_load(self, path, size=(360, 520)):
-        """
-        Charge et redimensionne une image, ou retourne un placeholder si le fichier n'existe pas.
-        
-        Args:
-            path (str): Chemin vers l'image
-            size (tuple): Taille cible (largeur, hauteur)
-        
-        Returns:
-            pygame.Surface: Image redimensionnée ou placeholder gris avec bordure
-        """
+        """Charge et redimensionne une image, ou placeholder gris si absente."""
         if os.path.exists(path):
-            img = pg.image.load(path).convert_alpha()  # charge avec canal alpha
-            return pg.transform.smoothscale(img, size)  # redimensionne proprement
-        # Si le fichier est manquant, crée un placeholder gris avec bordure
+            return pg.transform.smoothscale(pg.image.load(path).convert_alpha(), size)
         surf = pg.Surface(size, pg.SRCALPHA)
-        surf.fill((230, 220, 220))  # fond gris clair
-        pg.draw.rect(surf, (120, 120, 140), surf.get_rect(), 2)  # bordure gris foncé
+        surf.fill((230, 220, 220))
+        pg.draw.rect(surf, (120, 120, 140), surf.get_rect(), 2)
         return surf
 
     def _layer_for(self, garment) -> int:
-        """
-        Détermine l'ordre de superposition d'un vêtement selon sa catégorie.
-        Réutilise la même logique que DressScene pour cohérence visuelle.
-        
-        Args:
-            garment (Garment): Vêtement à évaluer
-        
-        Returns:
-            int: Indice de calque (0=fond -> 5=avant)
-                0: chaussures, 1: bas, 2: haut, 3: cheveux, 4: visage, 5: accessoires
-        """
-        # Récupère le nom du vêtement et le convertit en majuscules pour comparaison
+        """Ordre de superposition identique à DressScene (0=fond → 5=avant)."""
         name = getattr(garment, 'name', '').upper()
-        
-        # Détecte la catégorie par mots-clés dans le nom
-        if any(tok in name for tok in ["SHOE", "CHAUSSURE"]):
-            return 0  # chaussures (fond)
-        if any(tok in name for tok in ["BOTTOM", "BAS", "PANTS", "PANTALON", "SKIRT", "JUPE"]):
-            return 1  # bas (pantalon, jupe)
-        if any(tok in name for tok in ["TOP", "HAUT", "SHIRT", "DRESS", "ROBE"]):
-            return 2  # haut (t-shirt, robe)
-        if any(tok in name for tok in ["HAIR", "CHEVEU", "HEAD"]):
-            return 3  # cheveux
-        if any(tok in name for tok in ["FACE", "VISAGE"]):
-            return 4  # visage (masques, lunettes)
-        if any(tok in name for tok in ["ACCESSORY", "ACCESSOIRE"]):
-            return 5  # accessoires (avant-plan)
-        return 2  # défaut: considéré comme un haut
+        if any(t in name for t in ["SHOE", "CHAUSSURE"]):                         return 0
+        if any(t in name for t in ["BOTTOM", "BAS", "PANTS", "SKIRT", "JUPE"]):  return 1
+        if any(t in name for t in ["TOP", "HAUT", "SHIRT", "DRESS", "ROBE"]):    return 2
+        if any(t in name for t in ["HAIR", "CHEVEU", "HEAD"]):                    return 3
+        if any(t in name for t in ["FACE", "VISAGE"]):                            return 4
+        if any(t in name for t in ["ACCESSORY", "ACCESSOIRE"]):                   return 5
+        return 2
 
     def handle_event(self, event):
-        """
-        Traite les événements utilisateur (touches clavier uniquement sur cet écran).
-        
-        Args:
-            event (pygame.Event): Événement pygame à traiter
-        """
-        if event.type == pg.KEYDOWN:  # touche pressée
-            if event.key == pg.K_r:  # touche R
-                self.game.goto_menu()  # retour au menu principal
-            if event.key == pg.K_n:  # touche N (nouvelle partie - placeholder)
-                self.game.goto_menu()  # pour l'instant, renvoie aussi au menu
+        if event.type == pg.KEYDOWN and event.key in (pg.K_r, pg.K_n):
+            self.game.goto_menu()
 
     def update(self, dt):
-        """
-        Met à jour la logique de la scène (aucune logique active sur cet écran).
-        
-        Args:
-            dt (float): Temps écoulé depuis la dernière frame (en secondes)
-        """
-        pass  # écran statique, pas de logique à mettre à jour
+        pass  # écran statique, aucune logique à mettre à jour
 
     def draw(self, screen):
-        """
-        Dessine tous les éléments visuels de l'écran résultat.
-        
-        Args:
-            screen (pygame.Surface): Surface principale du jeu
-        """
-        # --- Fond d'écran ---
-        screen.blit(self.bg, (0, 0))  # dessiner le fond en premier
+        screen.blit(self.bg, (0, 0))
+        self._draw_info_panel(screen)
+        self._draw_mannequin(screen)
 
-        # --- Panneau gauche: informations (score, argent, instructions) ---
-        
-        # Titre avec thème
-        title = self.font.render(f"Résultat — thème {self.theme_label}", True, (20, 20, 50))
-        title_rect = title.get_rect(topleft=(20, 20))
-        # Encadré blanc semi-transparent pour améliorer la lisibilité
-        bg_rect = title_rect.inflate(20, 10)  # padding: 10px horizontal, 5px vertical
-        bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)  # surface avec alpha
-        bg_surf.fill((255, 255, 255, 200))  # blanc avec 200/255 d'opacité
-        screen.blit(bg_surf, bg_rect.topleft)
-        screen.blit(title, title_rect)
+    def _draw_info_panel(self, screen):
+        """Panneau gauche : titre, score, argent, raccourci retour."""
+        items = [
+            (self.font,       f"Résultat — thème {self.theme_label}", (255,255,255), (20, 20)),
+            (self.small_font, f"Score: {self.score}",                 (50, 50, 80),  (20, 80)),
+            (self.small_font, f"Argent gagné: {self.money}",          (30, 30, 60),  (40, 160)),
+            (self.small_font, "R = Retour menu",                      (60, 60, 80),  (40, 220)),
+        ]
+        for font, text, color, pos in items:
+            surf    = font.render(text, True, color)
+            rect    = surf.get_rect(topleft=pos)
+            bg_surf = pg.Surface(rect.inflate(20, 10).size, pg.SRCALPHA)
+            bg_surf.fill((255, 255, 255, 200))
+            screen.blit(bg_surf, rect.inflate(20, 10).topleft)
+            screen.blit(surf, rect)
 
-        # Score obtenu
-        score_text = self.small_font.render(f"Score: {self.score}", True, (50, 50, 80)) # Affiche le score obtenu dans une police plus petite et une couleur différente pour le différencier du titre
-        score_rect = score_text.get_rect(topleft=(20, 80)) # Positionne le score sous le titre avec un peu d'espace
-        bg_rect = score_rect.inflate(20, 10) # padding pour le score 
-        bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)
-        bg_surf.fill((255, 255, 255, 200)) # fond blanc semi-transparent pour le score
-        screen.blit(bg_surf, bg_rect.topleft) # Affiche le fond derrière le score pour améliorer la lisibilité
-        screen.blit(score_text, score_rect) # Affiche le score obtenu dans un encadré similaire au titre
-
-        # Argent gagné
-        mo = self.small_font.render(f"Argent gagné: {self.money}", True, (30, 30, 60)) # Affiche l'argent gagné dans la même police que le score mais avec une couleur plus sombre pour différencier les deux informations
-        mo_rect = mo.get_rect(topleft=(40, 160)) # Positionne l'argent gagné sous le score avec un peu plus d'espace pour les différencier
-        bg_rect = mo_rect.inflate(20, 10) # padding pour l'argent gagné
-        bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA) # surface avec alpha pour le fond de l'argent gagné 
-        bg_surf.fill((255, 255, 255, 200)) # fond blanc semi-transparent pour l'argent gagné
-        screen.blit(bg_surf, bg_rect.topleft) # Affiche le fond derrière l'argent gagné pour améliorer la lisibilité
-        screen.blit(mo, mo_rect) # Affiche l'argent gagné dans un encadré similaire au score
-
-        # Instruction pour retour au menu
-        hint = self.small_font.render("R = Retour menu", True, (60, 60, 80)) # Affiche l'instruction pour retourner au menu principal en bas du panneau gauche, avec une couleur plus claire pour la différencier des autres informations
-        hint_rect = hint.get_rect(topleft=(40, 220)) # Positionne l'instruction sous l'argent gagné avec un peu plus d'espace pour la différencier des autres informations
-        bg_rect = hint_rect.inflate(20, 10)
-        bg_surf = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)
-        bg_surf.fill((255, 255, 255, 200)) # fond blanc semi-transparent pour l'instruction de retour au menu
-        screen.blit(bg_surf, bg_rect.topleft) # Affiche le fond derrière l'instruction pour améliorer la lisibilité
-        screen.blit(hint, hint_rect)
-
-        # --- Panneau droit: mannequin habillé (aperçu final) ---
-        
-        # Calcul de la position pour centrer le mannequin dans le panneau droit
-        mannequin_x = self.right_panel.centerx - self.mannequin_img.get_width() // 2
-        mannequin_y = 80  # marge supérieure
-
-        # Dessiner le mannequin de base en premier (arrière-plan)
-        screen.blit(self.mannequin_img, (mannequin_x, mannequin_y))
-
-        # Superposer les vêtements portés dans l'ordre des calques (shoes -> accessories)
-        # Les vêtements ont déjà été triés dans __init__
+    def _draw_mannequin(self, screen):
+        """Panneau droit : mannequin de base + vêtements portés superposés."""
+        x = self.right_panel.centerx - self.mannequin_img.get_width() // 2
+        y = 80
+        screen.blit(self.mannequin_img, (x, y))
         for garment_img in self.worn_garments:
-            screen.blit(garment_img, (mannequin_x, mannequin_y))  # même position que le mannequin
+            screen.blit(garment_img, (x, y))

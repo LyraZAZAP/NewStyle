@@ -1,74 +1,50 @@
-# ========================================
-# IMPORTS - Bibliothèques utilisées
-# ========================================
-import sqlite3  # Permet de gérer une base de données SQLite
-from pathlib import Path  # Utilitaire pour manipuler les chemins de fichiers de manière robuste
-import bcrypt  # Bibliothèque pour hasher et vérifier les mots de passe de manière sécurisée
-from config import DB_PATH  # Importe le chemin par défaut de la base de données depuis config.py
+# Connexion à la base de données SQLite et authentification utilisateurs
 
-# ========================================
-# CHEMINS DES FICHIERS SQL
-# ========================================
-# Chemin vers le fichier de schéma SQL (structure des tables)
-SCHEMA = Path('data/schema.sql')
-# Chemin vers le fichier de données initiales (données pré-remplies)
-SEED = Path('data/seed_data.sql')
+import sys
+import sqlite3
+from pathlib import Path
+import bcrypt
+from config import DB_PATH
 
-# ========================================
-# CLASSE DATABASE - Gestion de la base de données
-# ========================================
+
+def _resource(relative: str) -> Path:
+    """Retourne le chemin d'une ressource en lecture seule.
+
+    PyInstaller --onedir place les fichiers --add-data dans sys._MEIPASS
+    (sous-dossier _internal/). On doit y lire schema.sql et seed_data.sql.
+    En développement, on lit simplement depuis le répertoire courant.
+    """
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        return Path(sys._MEIPASS) / relative
+    return Path(relative)
+
+
+SCHEMA = _resource('data/schema.sql')
+SEED   = _resource('data/seed_data.sql')
+
+
 class Database:
-    """Classe pour gérer la connexion et les opérations sur la base de données."""
-    
+    """Gère la connexion SQLite et les opérations sur les utilisateurs."""
+
     def __init__(self, path: str = DB_PATH):
-        """Initialise la base de données.
-        
-        Args:
-            path (str): Chemin vers le fichier de la base de données
-        """
-        # Stocke le chemin de la base de données
         self.path = path
-        # Initialise la connexion à None (pas encore connecté)
         self._connection = None
-        # Crée le dossier 'data' s'il n'existe pas
-        Path('data').mkdir(exist_ok=True)
-        # Initialise la structure et les données de la base de données
+        # Crée le dossier contenant game.db (chemin absolu quand frozen → dossier du .exe)
+        Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 
     def _init_db(self):
-        """Initialise la base de données en exécutant le schéma et les données initiales."""
-        # Vérifie si la BD existe déjà
         db_exists = Path(self.path).exists()
-        
-        # Se connecte à la base de données (crée le fichier s'il n'existe pas)
         with sqlite3.connect(self.path) as con:
-            # Exécute TOUJOURS le schéma (CREATE TABLE IF NOT EXISTS)
+            # Crée les tables si elles n'existent pas encore
             con.executescript(SCHEMA.read_text(encoding='utf-8'))
-            
-            # N'exécute le seed QUE si la BD est nouvelle
+            # Insère les données de départ uniquement à la première création
             if not db_exists:
                 con.executescript(SEED.read_text(encoding='utf-8'))
 
-            # Vérifie si la table 'users' existe; si non, on la crée proprement
-            cur = con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
-            if cur.fetchone() is None:
-                con.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS users (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        username TEXT NOT NULL UNIQUE,
-                        display_name TEXT NOT NULL,
-                        avatar_path TEXT NOT NULL DEFAULT 'assets/avatars/default.png',
-                        password_hash BLOB NOT NULL,
-                        created_at TEXT NOT NULL DEFAULT (datetime('now'))
-                    );
-                    """
-                )
-
-            # Récupère les colonnes existantes et ajoute celles qui manquent
+            # Migration : ajoute les colonnes absentes pour les anciennes bases de données
             try:
-                cur = con.execute("PRAGMA table_info(users)")
-                cols = [r[1] for r in cur.fetchall()]
+                cols = [r[1] for r in con.execute("PRAGMA table_info(users)").fetchall()]
             except sqlite3.OperationalError:
                 cols = []
 
@@ -77,6 +53,7 @@ class Database:
             if 'avatar_path' not in cols:
                 con.execute("ALTER TABLE users ADD COLUMN avatar_path TEXT NOT NULL DEFAULT 'assets/avatars/default.png'")
             if 'username' not in cols:
+                # Ancienne colonne 'login' → renommer en 'username'
                 if 'login' in cols:
                     con.execute("ALTER TABLE users ADD COLUMN username TEXT")
                     con.execute("UPDATE users SET username = login WHERE username IS NULL OR username = ''")
@@ -84,91 +61,43 @@ class Database:
                     con.execute("ALTER TABLE users ADD COLUMN username TEXT NOT NULL DEFAULT ''")
 
             con.commit()
-            con.commit()
 
     def connect(self):
-        """Établit une connexion à la base de données.
-        
-        Returns:
-            sqlite3.Connection: La connexion à la base de données
-        """
-        # Crée une connexion à la base de données sqlite
+        """Ouvre une connexion (rows accessibles par nom de colonne)."""
         con = sqlite3.connect(self.path)
-        # Configure le factory pour retourner des dictionnaires au lieu de tuples
-        # Cela permet d'accéder aux colonnes par leur nom (ex: row['id'])
         con.row_factory = sqlite3.Row
-        # Stocke la connexion en tant que variable d'instance
         self._connection = con
         return con
 
     def close(self):
-        """Ferme la connexion à la base de données de manière sécurisée."""
-        # Vérifie s'il existe une connexion active
         if self._connection:
             try:
-                # Ferme la connexion
                 self._connection.close()
-                # Réinitialise la variable de connexion
                 self._connection = None
             except Exception as e:
-                # Affiche un message d'erreur si la fermeture échoue
-                print(f"Erreur lors de la fermeture de la connexion DB : {e}")
+                print(f"Erreur fermeture DB : {e}")
 
-        # Arrête le gestionnaire de SQLite
-        try:
-            sqlite3.shutdown()
-        except Exception:
-            # Ignore les erreurs lors de l'arrêt
-            pass
-
-    # ========================================
-    # FONCTIONS UTILISATEUR - Authentification
-    # ========================================
+    # --- Authentification ---
 
     def hash_password(self, password: str) -> bytes:
-        """Hache un mot de passe de manière sécurisée avec bcrypt.
-        
-        Args:
-            password (str): Le mot de passe à hasher
-            
-        Returns:
-            bytes: Le mot de passe hashé
-        """
-        # Convertit le mot de passe en bytes et le hache avec bcrypt (salé automatiquement)
         return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
     def verify_password(self, password: str, password_hash: bytes) -> bool:
-        """Vérifie si un mot de passe correspond à son hash.
-        
-        Args:
-            password (str): Le mot de passe en clair à vérifier
-            password_hash (bytes): Le hash du mot de passe stocké en base
-            
-        Returns:
-            bool: True si le mot de passe est correct, False sinon
-        """
-        # Utilise bcrypt pour vérifier que le mot de passe correspond au hash
         return bcrypt.checkpw(password.encode("utf-8"), password_hash)
 
     def create_user(self, username: str, display_name: str, password: str, avatar_path: str = None):
-        """Crée un nouvel utilisateur. `avatar_path` est optionnel.
-        Si `avatar_path` est None, on utilise un avatar par défaut.
-        """
-        username = username.strip()
+        """Crée un utilisateur. Retourne (True, message) ou (False, erreur)."""
+        username     = username.strip()
         display_name = display_name.strip()
-        # Validation simple des champs (longueur minimale)
         if len(username) < 3:
             return False, "Identifiant trop court (min 3)."
         if len(display_name) < 3:
             return False, "Pseudo trop court (min 3)."
         if len(password) < 6:
             return False, "Mot de passe trop court (min 6)."
-        # Hash le mot de passe avant de le stocker
-        pw_hash = self.hash_password(password)
 
-        # Utiliser un avatar par défaut si aucun n'est fourni
-        if not avatar_path:
-            avatar_path = 'assets/avatars/default.png'
+        pw_hash     = self.hash_password(password)
+        avatar_path = avatar_path or 'assets/avatars/default.png'
 
         try:
             with sqlite3.connect(self.path) as con:
@@ -183,10 +112,9 @@ class Database:
         except Exception as e:
             return False, f"Erreur DB: {e}"
 
-
     def authenticate(self, username: str, password: str):
+        """Vérifie les identifiants. Retourne (True, message, user_dict) ou (False, erreur, None)."""
         username = username.strip()
-
         with sqlite3.connect(self.path) as con:
             con.row_factory = sqlite3.Row
             row = con.execute(
@@ -198,19 +126,13 @@ class Database:
             return False, "Utilisateur introuvable.", None
 
         if self.verify_password(password, row["password_hash"]):
-            # on renvoie tout ce qui est utile au jeu
             return True, "Connexion réussie !", {
-                "id": row["id"],
+                "id":           row["id"],
                 "display_name": row["display_name"],
-                "avatar_path": row["avatar_path"],
+                "avatar_path":  row["avatar_path"],
             }
-
         return False, "Mot de passe incorrect.", None
 
 
-
-# ========================================
-# INSTANCIATION GLOBALE
-# ========================================
-# Crée une instance globale de la base de données (utilisée dans toute l'application)
+# Instance globale partagée par toute l'application
 DB = Database()

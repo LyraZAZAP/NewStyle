@@ -1,21 +1,21 @@
-import pygame as pg  # wrapper pygame importé sous le nom pg
+import pygame as pg
 
 
-class Button:  # Widget simple de bouton
-    def __init__(self, rect, text, on_click):  # rect: tuple/rect, text: label, on_click: callable
-        self.rect = pg.Rect(rect)  # stocke le rectangle du bouton (x,y,w,h)
-        self.text = text  # texte affiché sur le bouton
-        self.on_click = on_click  # fonction appelée au clic
-        self.font = pg.font.SysFont(None, 28)  # police par défaut, taille 28
+class Button:
+    """Bouton cliquable avec texte centré."""
 
+    def __init__(self, rect, text, on_click):
+        self.rect     = pg.Rect(rect)
+        self.text     = text
+        self.on_click = on_click
+        self.font     = pg.font.SysFont(None, 28)
 
-    def draw(self, surf):  # Dessine le bouton sur la surface `surf`
-        pg.draw.rect(surf, (220,220,230), self.rect, border_radius = 20)  # fond clair arrondi
-        pg.draw.rect(surf, (10,104,255), self.rect, 5, border_radius = 20)  # contour plus foncé
-        label = self.font.render(self.text, True, (10,104,255))  # rend le texte en couleur sombre
-        surf.blit(label, label.get_rect(center=self.rect.center))  # centre le label dans le rect
+    def draw(self, surf):
+        pg.draw.rect(surf, (220, 220, 230), self.rect, border_radius=20)
+        pg.draw.rect(surf, (10, 104, 255),  self.rect, 5, border_radius=20)
+        label = self.font.render(self.text, True, (10, 104, 255))
+        surf.blit(label, label.get_rect(center=self.rect.center))
 
-
-    def handle(self, event):  # Gère les événements pygame pour le bouton
-        if event.type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):  # clic dans le rect ?
-            self.on_click()  # appelle le callback associé
+    def handle(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
+            self.on_click()
