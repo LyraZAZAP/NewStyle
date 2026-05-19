@@ -1,40 +1,38 @@
-# ========================================
-# CONFIGURATION DU JEU
-# ========================================
+# Configuration globale du jeu
 
-# === DIMENSIONS DE LA FENÊTRE ===
-WINDOW_WIDTH = 1024  # Largeur de la fenêtre en pixels
-WINDOW_HEIGHT = 640  # Hauteur de la fenêtre en pixels
+import sys
+import os
 
-# === PERFORMANCE ===
-FPS = 60  # Nombre d'images par seconde (60 FPS = 60 mises à jour par seconde)
+WINDOW_WIDTH  = 1024
+WINDOW_HEIGHT = 640
+FPS           = 60
 
-# === BASE DE DONNÉES ===
-DB_PATH = "data/game.db"  # Chemin vers le fichier de la base de données SQLite
+# game.db doit être dans le dossier du .exe (persistant entre les lancements).
+# Quand PyInstaller change le CWD vers _internal/, ce chemin relatif ne fonctionnerait plus,
+# donc on construit un chemin absolu vers le dossier de l'exécutable.
+if getattr(sys, 'frozen', False):
+    DB_PATH = os.path.join(os.path.dirname(sys.executable), 'data', 'game.db')
+else:
+    DB_PATH = "data/game.db"
 
-# === TITRE ET COULEUR ===
-TITLE = "Jeu de Dressing"  # Titre affiché dans la barre de la fenêtre
-BACKGROUND_COLOR = (240, 240, 245)  # Couleur de fond par défaut (RGB : gris-bleu clair)
+TITLE            = "Jeu de Dressing"
+BACKGROUND_COLOR = (240, 240, 245)
 
-# === CHEMINS DES IMAGES DE FOND D'ÉCRAN ===
-SIDEBAR_BG_PATH = "assets/backgrounds/sidebar_bg.png"  # Fond pour la zone de galerie (gauche)
-STAGE_BG_PATH = "assets/backgrounds/stage_bg.png"  # Fond pour la zone mannequin (droite)
-MENU_BG_PATH = "assets/backgrounds/menu_bg.png"  # Fond pour l'écran menu principal
-RESULT_BG_PATH = "assets/backgrounds/stage_bg.png"  # Fond pour l'écran résultat
+# Fonds d'écran
+SIDEBAR_BG_PATH = "assets/backgrounds/sidebar_bg.png"
+STAGE_BG_PATH   = "assets/backgrounds/stage_bg.png"
+MENU_BG_PATH    = "assets/backgrounds/menu_bg.png"
+RESULT_BG_PATH  = "assets/backgrounds/stage_bg.png"
 
-# === DISQUE MUSICAL (WIDGET UI) ===
-DISC_IMG_PATH = "assets/ui/disque.png"  # Image du disque vinyl qui tourne
-DISC_BTN_PATH = "assets/ui/bouton.png"  # Bouton au centre du disque (pour changer de musique)
+# Widget disque musical
+DISC_IMG_PATH = "assets/ui/disque.png"
+DISC_BTN_PATH = "assets/ui/bouton.png"
 
-# === LISTES DE MUSIQUES ===
-# Chargement des fichiers musicaux depuis le dossier assets/musics/
 MUSIC_TRACKS = [
-    "assets/musics/I DO COKE.mp3",  # Musique 1
-    "assets/musics/I Like It Rough.mp3",  # Musique 2
-    "assets/musics/404 (New Era).mp3",  # Musique 3
-    "assets/musics/Tila Tsoli - Bimbo Doll (Lyrics).mp3"  # Musique 4
+    "assets/musics/I DO COKE.mp3",
+    "assets/musics/I Like It Rough.mp3",
+    "assets/musics/404 (New Era).mp3",
+    "assets/musics/Tila Tsoli - Bimbo Doll (Lyrics).mp3",
 ]
 
-# === IMAGE DU TITRE ===
-# Image affichée en haut du menu au lieu du texte
 TITLE_IMG_PATH = "assets/titles/title_menu.png"

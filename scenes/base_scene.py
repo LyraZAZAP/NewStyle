@@ -1,28 +1,24 @@
-# ========================================
-# CLASSE DE BASE POUR TOUTES LES SCÈNES
-# Les scènes sont les différents écrans du jeu
-# ========================================
-
-# === IMPORTS ===
-import pygame as pg  # Pygame importé sous le nom pg (bibliothèque de jeu)
+import pygame as pg
 
 
-# === CLASSE DE BASE ===
-class Scene:  # Classe abstraite (modèle) pour toutes les scènes du jeu
+class Scene:
+    """Classe abstraite dont héritent toutes les scènes du jeu.
+
+    Chaque scène représente un écran : login, menu, habillage, résultat, etc.
+    La boucle principale dans Game appelle handle_event → update → draw à chaque frame.
+    """
+
     def __init__(self, game):
-        """Initialise une scène avec une référence au jeu."""
-        self.game = game  # Stocke la référence vers l'objet jeu principal
+        self.game = game
 
     def handle_event(self, event):
-        """Traite un événement pygame (clic souris, touche clavier, etc.)."""
-        pass  # Chaque scène concrète implémente sa propre logique
+        """Traite un événement pygame (clic, touche, scroll…)."""
+        pass
 
     def update(self, dt):
-        """Met à jour la logique de la scène chaque frame."""
-        # dt = delta time (temps écoulé depuis la dernière frame en secondes)
-        pass  # Chaque scène concrète implémente sa propre logique
+        """Met à jour la logique de la scène. dt = secondes depuis la dernière frame."""
+        pass
 
     def draw(self, screen):
-        """Dessine tutti les éléments visuels de la scène."""
-        # screen = surface pygame où dessiner (l'écran du jeu)
-        pass  # Chaque scène concrète implémente sa propre logique
+        """Dessine tous les éléments visuels de la scène."""
+        pass
