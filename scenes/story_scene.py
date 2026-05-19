@@ -24,22 +24,22 @@ class StoryScene(Scene):
 
     def __init__(self, game, mannequin, theme):
         super().__init__(game)
-        self.mannequin      = mannequin
-        self.theme          = theme
+        self.mannequin= mannequin
+        self.theme= theme
         self.player_dialogues = [  # dialogues du joueur (narrateur)
             "Tu viens d'entrer en école de styliste, après le bac de JUSTESSE ",
             "Une seule règle, soit stylé",
             "En marchant vers ton école, tu vois beaucoup d'élèves, tous habillés de façon très originaux. Tu remarques, emo.. scene.. goth.. classic.. lolita.. etc etc",
-            "DUMBASS T'A COGNÉ QUELQU'UN",
+            "YO FAT FUCK T'A COGNÉ QUELQU'UN",
         ]
         
         self.dialogue_index = 0  # index dans player_dialogues
         self.juliette_dialogue_index = 0  # index dans juliette_dialogues
-        
+ 
         self.juliette_dialogues = [  # dialogues de Juliette : (texte, clé image)
             ("OPA! Mais vro regarde", "confused_talking"),
             ("AHHHH t'es nouvelle nn???", "mouth_closed"),
-            ("Va falloir une outfit là psq tu ressemble à un ", "smile"),
+            ("Va falloir une outfit là psq tu ressemble à un bourgignon sorti d'une cocotte minute", "smile"),
         ]
 
         self.background   = _load_image("assets/backgrounds/school.png", (self.game.w, self.game.h), fallback_color=(180, 200, 240))
@@ -47,16 +47,16 @@ class StoryScene(Scene):
         nat_w, nat_h = raw_bar.get_size()  # récupérer les dimensions naturelles
         bar_w = self.game.w - 20  # largeur cible : presque tout l'écran
         bar_h = int(nat_h * bar_w / nat_w)  # hauteur calculée pour conserver le ratio
-        self.bar_image = pg.transform.smoothscale(raw_bar, (bar_w, bar_h))  # redimensionner en conservant les proportions
+        self.bar_image = pg.transform.smoothscale(raw_bar, (bar_w, bar_h))
         
-        self.bar_rect     = self.bar_image.get_rect(midbottom=(self.game.w // 2, self.game.h - 5))
+        self.bar_rect= self.bar_image.get_rect(midbottom=(self.game.w // 2, self.game.h - 5))
 
-        self.text_area_rect = pg.Rect(self.bar_rect.left + 40, self.bar_rect.top + 90, self.bar_rect.width - 80, self.bar_rect.height - 100)  # zone de texte dans la barre, décalée vers le bas
+        self.text_area_rect= pg.Rect(self.bar_rect.left + 40, self.bar_rect.top + 90, self.bar_rect.width - 80, self.bar_rect.height - 100)  # zone de texte dans la barre, décalée vers le bas
         char_size = (int(self.game.h * 0.84), int(self.game.h * 0.84))
-        self.juliette_images = {  # toutes les expressions de Juliette
-            "mouth_closed":     _load_image("assets/characteres/juliette_mouth_closed.png",     size=char_size),
-            "smile":            _load_image("assets/characteres/juliette_smile.png",            size=char_size),
-            "confused_talking": _load_image("assets/characteres/juliette_confused_talking.png", size=char_size),
+        self.juliette_images= {  # toutes les expressions de Juliette
+            "mouth_closed":_load_image("assets/characteres/juliette_mouth_closed.png",size=char_size),
+            "smile":_load_image("assets/characteres/juliette_smile.png",size=char_size),
+            "confused_talking":_load_image("assets/characteres/juliette_confused_talking.png",size=char_size),
         }
         self.juliette_image = self.juliette_images["mouth_closed"]  # image affichée actuellement
         self.juliette_rect = self.juliette_image.get_rect(midbottom=(self.game.w // 2, self.game.h - 40))
@@ -66,10 +66,10 @@ class StoryScene(Scene):
         self.prompt_font = pg.font.SysFont("Comic Sans MS", 24)  # police pour le prompt
         
 
-        self.juliette_visible = False
-        self.shake_timer      = 0.0
-        self.shake_duration   = 0.4  # secondes
-        self.shake_intensity  = 8    # pixels
+        self.juliette_visible= False
+        self.shake_timer= 0.0
+        self.shake_duration= 0.4  # secondes
+        self.shake_intensity= 8    # pixels
 
     def handle_event(self, event):
         """Avance le dialogue ou quitte la scène après le dernier dialogue de Juliette."""
@@ -103,22 +103,24 @@ class StoryScene(Scene):
 
         speaker_name = "juliette" if self.juliette_visible else "toi"
         title = self.title_font.render(speaker_name, True, (255, 255, 255))
-        screen.blit(title, (bar_rect.left + 30, bar_rect.top + 18))
+        text_x = self.game.w // 2 - self.bar_rect.width // 2 + 40 + shake_x
+        title_y = self.game.h - 195 + shake_y
+        screen.blit(title, (text_x - 10, title_y))
 
         if self.juliette_visible:
             message = self.juliette_dialogues[self.juliette_dialogue_index][0]
         else:
             message = self.player_dialogues[self.dialogue_index]
         wrapped = self._wrap_text(message, self.text_font, self.bar_rect.width - 80)
-        line_y = bar_rect.top + 90
+        line_y = self.game.h - 155 + shake_y
         for line in wrapped:
             text = self.text_font.render(line, True, (245, 245, 245))
-            screen.blit(text, (bar_rect.left + 40, line_y))
+            screen.blit(text, (text_x, line_y))
             line_y += self.text_font.get_linesize()
 
         prompt = self.prompt_font.render("Cliquez ou appuyez sur Entrée pour continuer", True, (200, 200, 220))
         prompt_rect = prompt.get_rect()
-        prompt_rect.bottomright = (bar_rect.right - 20, bar_rect.bottom - 15)
+        prompt_rect.bottomright = (bar_rect.right - 20, self.game.h - 15 + shake_y)
         screen.blit(prompt, prompt_rect)
 
     def _wrap_text(self, text, font, max_width):
