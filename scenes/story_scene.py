@@ -44,10 +44,10 @@ class StoryScene(Scene):
         ]
 
         juliette_dialogues_p1 = [  # dialogues de Juliette phase 1 (après le dress challenge)
-            ("Alors alors... t'as fait un effort je vois!", "smile"),
-            ("C'est... comment dire... un début hein", "confused_talking"),
+            ("dawg shawdyy looking good", "smile"),
+            ("T'as fait une roulette russe pour ta tenue ou je suis fou??", "confused_talking"),
             ("Bon je vais pas te mentir, t'as encore beaucoup à apprendre", "mouth_closed"),
-            ("Mais hey, c'est pour ça qu'on est là! Bienvenue officiellement à l'école!", "smile"),
+            ("Mais c'est pour ça que t'es là, allez on rentre en classe", "smile"),
         ]
 
         self.juliette_dialogues = juliette_dialogues_p1 if phase == 1 else juliette_dialogues_p0
