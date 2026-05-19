@@ -21,6 +21,7 @@ from scenes.register_scene import RegisterScene
 
 _SCENES_WITHOUT_AUDIO_HUD = (LoginScene, RegisterScene)
 from scenes.story_scene    import StoryScene
+from scenes.wheel_scene    import WheelScene
 from db                    import DB
 from audio_manager         import AudioManager
 from repositories          import UserRepo
@@ -69,6 +70,7 @@ class Game:
             "register": lambda: RegisterScene(self),
             "menu":     lambda: MenuScene(self),
             "story":    lambda: StoryScene(self, *args),
+            "wheel":    lambda: WheelScene(self, *args),
             "dress":    lambda: DressScene(self, *args),
             "result":   lambda: ResultScene(self, *args),
         }
@@ -80,10 +82,11 @@ class Game:
         self.cached_avatar = None
         self.set_scene("login")
 
-    def goto_register(self):    self.set_scene("register")
-    def goto_menu(self):        self.set_scene("menu")
-    def goto_story(self, m, t): self.set_scene("story", m, t)
-    def goto_dress(self, m, t): self.set_scene("dress", m, t)
+    def goto_register(self):         self.set_scene("register")
+    def goto_menu(self):             self.set_scene("menu")
+    def goto_story(self, m, t):      self.set_scene("story", m, t)
+    def goto_wheel(self, m):         self.set_scene("wheel", m)
+    def goto_dress(self, m, t):      self.set_scene("dress", m, t)
 
     def goto_result(self, mannequin, theme, outfit, worn_garments):
         self.set_scene("result", mannequin, theme, outfit, worn_garments)
