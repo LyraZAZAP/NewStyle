@@ -49,7 +49,7 @@ MUSIC_TRACKS = [
     "assets/musics/Tila Tsoli - Bimbo Doll (Lyrics).mp3",
     "assets/musics/Addison Rae - Fame is a Gun.mp3",
     "assets/musics/Arcadion Floor 2 Theme Bee My Honey - FFXIV OST.mp3",
-    "assets/musics/PinkPantheress - Girl Like Me (Official Video).mp3",
+    "assets/musics/PinkPantheress - Girl Like Me (Fan Music Video).mp3",
     "assets/musics/TIKI TIKI.mp3",
 ]
 
