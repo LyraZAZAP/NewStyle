@@ -18,10 +18,13 @@ from scenes.dress_scene    import DressScene
 from scenes.result_scene   import ResultScene
 from scenes.login_scene    import LoginScene
 from scenes.register_scene import RegisterScene
+
+_SCENES_WITHOUT_AUDIO_HUD = (LoginScene, RegisterScene)
 from scenes.story_scene    import StoryScene
 from db                    import DB
 from audio_manager         import AudioManager
 from repositories          import UserRepo
+from ui.widgets            import VolumeWidget
 
 
 class Game:
@@ -43,6 +46,9 @@ class Game:
         self.current_username = None
         self.current_avatar   = None
         self.cached_avatar    = None  # cache pour éviter de recharger l'image à chaque frame
+
+        self.volume_widget = VolumeWidget(self.audio)
+        self.volume_widget.place(self.w, self.h)
 
         self.scene = None
         self.set_scene("login")
@@ -117,25 +123,37 @@ class Game:
 
     # --- Boucle principale ---
 
+    def _audio_hud_visible(self):
+        return self.scene and not isinstance(self.scene, _SCENES_WITHOUT_AUDIO_HUD)
+
+    def _handle_event(self, event):
+        if event.type == pg.QUIT:
+            self.running = False
+            return
+        if event.type == pg.KEYDOWN and (
+            event.key == pg.K_F11
+            or (event.key == pg.K_RETURN and (event.mod & pg.KMOD_ALT))
+        ):
+            self.toggle_fullscreen()
+            return
+        if self.scene:
+            if self._audio_hud_visible() and self.volume_widget.handle_event(event):
+                return
+            self.scene.handle_event(event)
+
     def run(self):
         while self.running:
             dt = self.clock.tick(FPS) / 1000.0
 
             for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    self.running = False
-                elif event.type == pg.KEYDOWN and (
-                    event.key == pg.K_F11
-                    or (event.key == pg.K_RETURN and (event.mod & pg.KMOD_ALT))
-                ):
-                    self.toggle_fullscreen()
-                elif self.scene:
-                    self.scene.handle_event(event)
+                self._handle_event(event)
 
             if self.scene:
                 self.scene.update(dt)
                 self.scene.draw(self.screen)
             self._draw_avatar()
+            if self._audio_hud_visible():
+                self.volume_widget.draw(self.screen)
             pg.display.flip()
 
         self._cleanup()
