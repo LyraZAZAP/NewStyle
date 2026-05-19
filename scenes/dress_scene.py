@@ -1,4 +1,4 @@
-# Scène principale d'habillage : galerie (gauche) + mannequin (droite)
+# Scène principale d'habillage : galerie filtrée par catégorie + mannequin (droite)
 
 import os
 import pygame as pg
@@ -40,7 +40,7 @@ class Draggable:
 
 
 class DressScene(Scene):
-    """Galerie de vêtements à glisser-déposer sur le mannequin."""
+    """Galerie filtrée par catégorie, à glisser-déposer sur le mannequin."""
 
     def __init__(self, game, mannequin, theme):
         super().__init__(game)
@@ -56,12 +56,12 @@ class DressScene(Scene):
         self.content_height                   = 0
         self.worn_items: Dict[int, Draggable] = {}
 
-        self.scrollbar_dragging   = False
+        self.scrollbar_dragging    = False
         self.scrollbar_drag_offset = 0
 
         # Zones de l'écran
-        self.sidebar = pg.Rect(0,   0, 320,                  self.game.h)
-        self.stage   = pg.Rect(320, 0, self.game.w - 320, self.game.h)
+        self.sidebar = pg.Rect(0,   0, 320,                self.game.h)
+        self.stage   = pg.Rect(320, 0, self.game.w - 320,  self.game.h)
 
         self.sidebar_bg = _load_background(SIDEBAR_BG_PATH, (self.sidebar.width, self.sidebar.height), (250, 250, 255))
         self.stage_bg   = _load_background(STAGE_BG_PATH,   (self.stage.width,   self.stage.height),   (235, 240, 250))
@@ -71,11 +71,62 @@ class DressScene(Scene):
         # Mise en page de la galerie
         self.gallery_cols    = 1
         self.thumb_size      = (280, 280)
-        self.gallery_padding = 20
+        self.gallery_padding = 10
         self.gallery_gap     = 0
+
+        # Filtre par catégorie — commence sur la première
+        self.active_cat_id = self.categories[0].id if self.categories else None
+        self.cat_btn_font  = pg.font.SysFont(None, 21)
+        self.cat_button_rects: Dict[int, pg.Rect] = {}
+        self.gallery_top   = 0  # calculé dans _build_cat_buttons()
+        self._build_cat_buttons()
 
         self._build_gallery()
         self._clamp_scroll()
+
+    # --- Boutons de catégorie ---
+
+    def _build_cat_buttons(self):
+        """Calcule les rectangles des boutons de filtre (grille 2 colonnes)."""
+        pad   = 10
+        gap   = 6
+        btn_h = 40
+        btn_w = (self.sidebar.width - pad * 2 - gap) // 2
+
+        self.cat_button_rects = {}
+        for i, cat in enumerate(self.categories):
+            col = i % 2
+            row = i // 2
+            x   = pad + col * (btn_w + gap)
+            y   = pad + row * (btn_h + gap)
+            self.cat_button_rects[cat.id] = pg.Rect(x, y, btn_w, btn_h)
+
+        rows             = (len(self.categories) + 1) // 2
+        self.gallery_top = pad + rows * (btn_h + gap) + gap
+
+    def _try_click_cat_button(self, pos) -> bool:
+        """Active la catégorie cliquée et reconstruit la galerie. Retourne True si traité."""
+        for cat_id, rect in self.cat_button_rects.items():
+            if rect.collidepoint(pos):
+                if self.active_cat_id != cat_id:
+                    self.active_cat_id = cat_id
+                    self.scroll_y      = 0
+                    self._build_gallery()
+                    self._clamp_scroll()
+                return True
+        return False
+
+    def _draw_cat_buttons(self, screen):
+        """Dessine la grille de boutons de filtre par catégorie."""
+        for cat in self.categories:
+            rect   = self.cat_button_rects[cat.id]
+            active = (cat.id == self.active_cat_id)
+            bg     = (10, 104, 255)   if active else (220, 220, 235)
+            fg     = (255, 255, 255)  if active else (40, 40, 80)
+            pg.draw.rect(screen, bg,            rect, border_radius=10)
+            pg.draw.rect(screen, (10, 104, 255), rect, 2, border_radius=10)
+            label = self.cat_btn_font.render(cat.name, True, fg)
+            screen.blit(label, label.get_rect(center=rect.center))
 
     # --- Chargement d'images ---
 
@@ -91,18 +142,15 @@ class DressScene(Scene):
     # --- Construction de la galerie ---
 
     def _build_gallery(self):
-        """Construit la liste d'items de la galerie (labels + Draggables) à partir de la BD."""
+        """Construit les Draggables pour la catégorie active uniquement."""
         self.gallery_items.clear()
-        pad, gap      = self.gallery_padding, self.gallery_gap
-        tw, th        = self.thumb_size
-        cols          = max(1, int(self.gallery_cols))
-        y             = pad
+        pad, gap = self.gallery_padding, self.gallery_gap
+        tw, th   = self.thumb_size
+        cols     = max(1, int(self.gallery_cols))
+        y        = self.gallery_top  # les items commencent sous les boutons de catégorie
 
-        for cat in self.categories:
-            label = self.big.render(cat.name.upper(), True, (40, 40, 70))
-            self.gallery_items.append(("label", label, (pad, y)))
-            y += 36
-
+        active_cats = [c for c in self.categories if c.id == self.active_cat_id]
+        for cat in active_cats:
             x, col = pad, 0
             for g in GarmentRepo.by_category(cat.id):
                 d = Draggable(g, self._safe_load(g.sprite_path, size=(tw, th)), (x, y))
@@ -113,9 +161,8 @@ class DressScene(Scene):
                     y += th + gap
                 else:
                     x += tw + gap
-
             if col != 0:
-                y += th + gap  # compléter la dernière ligne partielle
+                y += th + gap
             y += gap * 2
 
         self.content_height = y
@@ -145,6 +192,9 @@ class DressScene(Scene):
 
     def _handle_mouse_down(self, event):
         if event.button == 1:
+            # Priorité : clic sur un bouton de catégorie
+            if self._try_click_cat_button(event.pos):
+                return
             if not self._try_start_scrollbar_drag(event.pos):
                 self._start_drag(event)
         elif event.button == 3:
@@ -157,6 +207,7 @@ class DressScene(Scene):
             self._stop_drag(event)
 
     def _start_drag(self, event):
+        """Commence le drag sur l'item sous le curseur (galerie visible uniquement)."""
         draggables = [i for i in self.gallery_items if isinstance(i, Draggable)]
         for item in reversed(draggables):
             draw_pos = pg.Vector2(item.pos) if item.grab else pg.Vector2(item.base_pos.x, item.base_pos.y - self.scroll_y)
@@ -192,7 +243,6 @@ class DressScene(Scene):
             self._apply_worn_visuals(item)
             self.worn_items[item.garment.id] = item
         else:
-            # Remplace l'article existant de la même catégorie
             existing = self._find_worn_in_category(cat_id)
             if existing is not None:
                 self.outfit.remove(existing.garment)
@@ -202,7 +252,6 @@ class DressScene(Scene):
                 self._apply_worn_visuals(item)
                 self.worn_items[item.garment.id] = item
             else:
-                # Catégorie pleine sans remplaçable → retour sidebar
                 item.pos = pg.Vector2(20, item.pos.y)
 
     def _find_worn_in_category(self, category_id):
@@ -212,7 +261,7 @@ class DressScene(Scene):
         return None
 
     def _apply_worn_visuals(self, item):
-        """Redimensionne le sprite à la taille du mannequin et positionne l'item dessus."""
+        """Redimensionne le sprite à la taille du mannequin et le positionne dessus."""
         m_w, m_h    = self.mannequin_img.get_size()
         mannequin_x = self.stage.left + (self.stage.width - m_w) // 2 + 8
         item.stage_image = self._safe_load(item.garment.sprite_path, size=(m_w, m_h))
@@ -223,7 +272,7 @@ class DressScene(Scene):
         item.image       = item.thumb
 
     def _try_remove_worn_at(self, pos):
-        """Retire via clic droit le vêtement porté sous le curseur (priorité au calque le plus haut)."""
+        """Retire via clic droit le vêtement porté sous le curseur (calque le plus haut en priorité)."""
         for it in sorted(self.worn_items.values(), key=lambda i: self._layer_for(i.garment), reverse=True):
             img  = it.stage_image if it.stage_image is not None else it.image
             rect = img.get_rect(topleft=(int(it.pos.x), int(it.pos.y)))
@@ -253,6 +302,7 @@ class DressScene(Scene):
     def draw(self, screen):
         self._draw_sidebar(screen)
         self._draw_gallery_items(screen)
+        self._draw_cat_buttons(screen)   # par-dessus les items pour masquer le dépassement
         self._draw_stage(screen)
         self._draw_worn_items(screen)
         self._draw_scrollbar(screen)
@@ -263,19 +313,17 @@ class DressScene(Scene):
 
     def _draw_gallery_items(self, screen):
         for it in self.gallery_items:
-            if isinstance(it, tuple) and it[0] == "label":
-                _, surf, (x, y) = it
-                draw_y = y - self.scroll_y
-                if self.sidebar.top <= draw_y <= self.sidebar.bottom:
-                    screen.blit(surf, (x, draw_y))
-            elif isinstance(it, Draggable) and it.garment.id not in self.worn_items:
+            if isinstance(it, Draggable) and it.garment.id not in self.worn_items:
                 if it.grab:
                     screen.blit(it.image, it.pos)
                 else:
-                    screen.blit(it.image, (it.base_pos.x, it.base_pos.y - self.scroll_y))
+                    draw_y = it.base_pos.y - self.scroll_y
+                    # N'affiche que les items dans la zone galerie (sous les boutons)
+                    if self.gallery_top <= draw_y < self.sidebar.height:
+                        screen.blit(it.image, (it.base_pos.x, draw_y))
 
     def _draw_stage(self, screen):
-        screen.blit(self.stage_bg,    self.stage.topleft)
+        screen.blit(self.stage_bg,      self.stage.topleft)
         screen.blit(self.mannequin_img, (self.stage.left + 180, 80))
 
     def _draw_worn_items(self, screen):
@@ -285,37 +333,38 @@ class DressScene(Scene):
             screen.blit(img, it.pos)
 
     def _draw_scrollbar(self, screen):
+        """Scrollbar dans la zone galerie uniquement (sous les boutons de catégorie)."""
         if self.content_height <= self.sidebar.height:
             return
-        view_ratio = self.sidebar.height / self.content_height
-        thumb_h    = max(30, int(self.sidebar.height * view_ratio))
+        rail_top   = self.gallery_top + 4
+        rail_h     = self.sidebar.height - rail_top - 10
+        view_ratio = (self.sidebar.height - self.gallery_top) / max(1, self.content_height - self.gallery_top)
+        thumb_h    = max(30, int(rail_h * view_ratio))
         max_scroll = self.content_height - self.sidebar.height
-        thumb_y    = int((self.scroll_y / max_scroll) * (self.sidebar.height - thumb_h))
-        rail  = pg.Rect(self.sidebar.right - 10, 10, 4,  self.sidebar.height - 20)
-        thumb = pg.Rect(self.sidebar.right - 14, 10 + thumb_y, 12, thumb_h)
+        thumb_y    = int((self.scroll_y / max_scroll) * (rail_h - thumb_h)) if max_scroll > 0 else 0
+        rail  = pg.Rect(self.sidebar.right - 10, rail_top,          4,  rail_h)
+        thumb = pg.Rect(self.sidebar.right - 14, rail_top + thumb_y, 12, thumb_h)
         pg.draw.rect(screen, (220, 220, 230), rail,  border_radius=2)
         pg.draw.rect(screen, (160, 160, 180), thumb, border_radius=4)
 
     def _draw_hint(self, screen):
-        def _draw_label(surf, pos):
-            r = surf.get_rect(topleft=pos)
-            bg = pg.Surface(r.inflate(20, 10).size, pg.SRCALPHA)
+        def _label(surf, pos):
+            r   = surf.get_rect(topleft=pos)
+            bg  = pg.Surface(r.inflate(20, 10).size, pg.SRCALPHA)
             bg.fill((255, 255, 255, 200))
             screen.blit(bg, r.inflate(20, 10).topleft)
             screen.blit(surf, r)
 
-        _draw_label(
+        _label(
             self.font.render("Molette = défiler | Entrée = valider", True, (30, 30, 60)),
             (self.stage.left + 20, self.game.h - 30),
         )
         title   = self.big.render(f"Thème: {self.theme_label}", True, (20, 20, 50))
-        title_x = self.game.w - title.get_width() - 20
-        _draw_label(title, (title_x, 20))
+        _label(title, (self.game.w - title.get_width() - 30, 20))
 
     # --- Ordre de superposition des calques ---
 
     def _category_name(self, garment) -> str:
-        """Retourne le nom de la catégorie en majuscules à partir du category_id."""
         for c in self.categories:
             if c.id == garment.category_id:
                 return c.name.upper()
@@ -328,40 +377,44 @@ class DressScene(Scene):
         def has(*tokens):
             return any(tok in name for tok in tokens)
 
-        if has("SHOE", "CHAUSSURE", "FEET"):                                        return 0
+        if has("SHOE", "CHAUSSURE", "FEET"):                                         return 0
         if has("BOTTOM", "BAS", "PANTS", "PANTALON", "SKIRT", "JUPE", "SHORT", "JEAN"): return 1
         if has("TOP", "HAUT", "SHIRT", "DRESS", "ROBE", "COAT", "JACKET", "PULL"):      return 2
-        if has("HAIR", "CHEVEU", "HEAD", "CHAPEAU", "HAT"):                         return 3
-        if has("FACE", "VISAGE", "MASK", "GLASSES", "LUNETTE"):                     return 4
-        if has("ACCESSORY", "ACCESSOIRE", "ACC"):                                   return 5
+        if has("HAIR", "CHEVEU", "HEAD", "CHAPEAU", "HAT"):                          return 3
+        if has("FACE", "VISAGE", "MASK", "GLASSES", "LUNETTE"):                      return 4
+        if has("ACCESSORY", "ACCESSOIRE", "ACC"):                                    return 5
         return 2  # défaut: traité comme un haut
 
     # --- Scrollbar interactive ---
 
+    def _scrollbar_geometry(self):
+        """Retourne (rail_top, rail_h, thumb_h, max_scroll) pour la scrollbar."""
+        rail_top   = self.gallery_top + 4
+        rail_h     = self.sidebar.height - rail_top - 10
+        view_ratio = (self.sidebar.height - self.gallery_top) / max(1, self.content_height - self.gallery_top)
+        thumb_h    = max(30, int(rail_h * view_ratio))
+        max_scroll = self.content_height - self.sidebar.height
+        return rail_top, rail_h, thumb_h, max_scroll
+
     def _try_start_scrollbar_drag(self, pos) -> bool:
         if self.content_height <= self.sidebar.height:
             return False
-
-        view_ratio = self.sidebar.height / self.content_height
-        thumb_h    = max(30, int(self.sidebar.height * view_ratio))
-        max_scroll = self.content_height - self.sidebar.height
-        thumb_y    = int((self.scroll_y / max_scroll) * (self.sidebar.height - thumb_h)) if max_scroll > 0 else 0
-        rail  = pg.Rect(self.sidebar.right - 10, 10, 4, self.sidebar.height - 20)
-        thumb = pg.Rect(self.sidebar.right - 14, 10 + thumb_y, 12, thumb_h)
+        rail_top, rail_h, thumb_h, max_scroll = self._scrollbar_geometry()
+        thumb_y = int((self.scroll_y / max_scroll) * (rail_h - thumb_h)) if max_scroll > 0 else 0
+        rail  = pg.Rect(self.sidebar.right - 10, rail_top,           4,  rail_h)
+        thumb = pg.Rect(self.sidebar.right - 14, rail_top + thumb_y, 12, thumb_h)
 
         if thumb.collidepoint(pos):
             self.scrollbar_dragging    = True
             self.scrollbar_drag_offset = pos[1] - thumb.top
             return True
 
-        # Clic sur le rail → saut immédiat à la position cliquée
         in_rail = rail.collidepoint(pos) or (
             self.sidebar.right - 14 <= pos[0] <= self.sidebar.right - 2
-            and 10 <= pos[1] <= self.sidebar.height - 10
+            and rail_top <= pos[1] <= rail_top + rail_h
         )
         if in_rail:
-            rail_h         = self.sidebar.height - 20
-            ratio          = (pos[1] - 10) / rail_h if rail_h > 0 else 0
+            ratio          = (pos[1] - rail_top) / rail_h if rail_h > 0 else 0
             self.scroll_y  = int(ratio * max_scroll)
             self._clamp_scroll()
             self.scrollbar_dragging    = True
@@ -373,16 +426,13 @@ class DressScene(Scene):
     def _update_scrollbar_drag(self, pos):
         if self.content_height <= self.sidebar.height:
             return
-        view_ratio = self.sidebar.height / self.content_height
-        thumb_h    = max(30, int(self.sidebar.height * view_ratio))
-        max_scroll = self.content_height - self.sidebar.height
-        rail_h     = self.sidebar.height - 20
-        thumb_top  = max(0, min(pos[1] - 10 - self.scrollbar_drag_offset, rail_h - thumb_h))
-        ratio      = thumb_top / (rail_h - thumb_h) if (rail_h - thumb_h) > 0 else 0
+        rail_top, rail_h, thumb_h, max_scroll = self._scrollbar_geometry()
+        thumb_top = max(0, min(pos[1] - rail_top - self.scrollbar_drag_offset, rail_h - thumb_h))
+        ratio     = thumb_top / (rail_h - thumb_h) if (rail_h - thumb_h) > 0 else 0
         self.scroll_y = int(ratio * max_scroll)
         self._clamp_scroll()
 
-    # --- API publique de configuration de la galerie ---
+    # --- API publique ---
 
     def set_gallery_layout(self, cols=None, thumb_size=None):
         """Recharge la galerie avec un nouveau nombre de colonnes ou une nouvelle taille de vignette."""
